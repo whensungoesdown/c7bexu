@@ -118,6 +118,7 @@ module c7bexu (
    wire exc_vld_e;
    wire exc_vld_m;
    wire exc_vld_w;
+   wire exc_vld_comb_w;
 
    wire [5:0] exc_code_e;
    wire [5:0] exc_code_m;
@@ -202,9 +203,11 @@ module c7bexu (
    wire [31:0] lsu_data_ls3;
    wire lsu_wr_fin_ls3;
    wire lsu_except_ale_ls1;
+   wire lsu_except_ale_w;
    wire [31:0] lsu_except_badv_ls1;
-   wire lsu_except_buserr_ls3; // NOT USED
-   wire lsu_except_ecc_ls3; // NOT USED
+   wire [31:0] lsu_except_badv_w;
+   wire lsu_except_buserr_ls3;
+   wire lsu_except_ecc_ls3;
 
    assign lsu_base_e = rs1_data_byp_e;
    assign lsu_offset_e = lsu_double_read_e ? rs2_data_byp_e: imm_shifted_e;
@@ -374,10 +377,11 @@ module c7bexu (
       .csr_eentry                      (csr_isr_addr),
       .csr_era                         (csr_ert_addr),
 
-      .ecl_csr_badv_e                  (), // to do
-      .exu_ifu_except                  (exc_vld_w),
+      //.ecl_csr_badv_e                  (lsu_except_badv_w), 
+      .ecl_csr_badv_w                  (lsu_except_badv_w), 
+      .exu_ifu_except                  (exc_vld_comb_w),
       //.ecl_csr_exccode_e               (exc_code_w),
-      .ecl_csr_exccode                 (exc_code_w),
+      .ecl_csr_exccode                 (exc_code_comb_w),
       //.ifu_Exu_pc_e                    (pc_w),
       .ifu_Exu_pc_w                    (pc_w),
       //.ecl_csr_ertn_e                  (ertn_vld_w),
@@ -390,23 +394,51 @@ module c7bexu (
    );
 
 
-//   assign rd_data_m = ({32{alu_vld_m}} & alu_res_m) |
-//                   ({32{lsu_vld_m & lsu_data_vld_ls3}} & lsu_rdata_m);
-   assign rd_data_m = alu_vld_m                     ? alu_res_m :
-                     (lsu_vld_m & lsu_data_vld_ls3) ? lsu_rdata_m :
-                      bru_vld_m                     ? bru_link_pc_m :
-                      mul_vld_m                     ? mul_res_m :
-                      csr_vld_m                     ? csr_rdata_m :
+   assign rd_data_m = ({32{alu_vld_m}}                    & alu_res_m) |
+                      ({32{lsu_vld_m & lsu_data_vld_ls3}} & lsu_rdata_m) |
+                      ({32{bru_vld_m}}                    & bru_link_pc_m) |
+                      ({32{mul_vld_m}}                    & mul_res_m) |
+                      ({32{csr_vld_m}}                    & csr_rdata_m);
+
+   // This circuit implementation is prioritized.
+   //assign rd_data_m = alu_vld_m                     ? alu_res_m :
+   //                  (lsu_vld_m & lsu_data_vld_ls3) ? lsu_rdata_m :
+   //                   bru_vld_m                     ? bru_link_pc_m :
+   //                   mul_vld_m                     ? mul_res_m :
+   //                   csr_vld_m                     ? csr_rdata_m :
                                                       '0;
 
    assign exu_ifu_branch = bru_branch_w;
    assign exu_ifu_brn_addr = bru_brn_addr_w;
 
-   assign exu_ifu_except = csr_isr_addr;
+   assign exu_ifu_except = exc_vld_comb_w;
    assign exu_ifu_isr_addr = csr_isr_addr;
 
    assign exu_ifu_ertn = ertn_vld_w;
    assign exu_ifu_ert_addr = csr_ert_addr;
+
+   assign exc_vld_comb_w = exc_vld_w | lsu_except_ale_w;
+   assign exc_code_comb_w = exc_code | ({6{lsu_except_ale_w}} & 6'h09); // EXC_ALE 
+
+
+   wire stall;
+   wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
+
+   c7bexu_ecl(
+      .clk                             (clk),
+      .resetn                          (resetn),
+
+      .stall                           (stall),
+
+      .lsu_vld_e                       (lsu_vld_e),
+      .lsu_except_ale_ls1              (lsu_except_ale_ls1),
+      .lsu_except_buserr_ls3           (lsu_except_buserr_ls3),
+      .lsu_except_ecc_ls3              (lsu_except_ecc_ls3),
+      .lsu_ecl_data_valid_ls3          (lsu_ecl_data_valid_ls3),
+      .lsu_ecl_wr_fin_ls3              (lsu_ecl_wr_fin_ls3),
+
+      .csr_vld_e                       (csr_vld_e)  // stall two cycle will be engough
+   );
 
 
    //
@@ -417,8 +449,6 @@ module c7bexu (
    // exceptions.
    wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) | flush;
 
-   wire stall; // to do  uty: test
-   wire flush; // to do
    wire reg_en_m = ~stall | flush;
 
    // exc
@@ -628,6 +658,19 @@ module c7bexu (
       .clk (clk),
       .en  (reg_en_d),
       .q   (lsu_double_read_e));
+
+   // m equvalent to ls1, for lsu instructions that raise ale, lsu will not stall 
+   dffe_ns #(1) lsu_except_ale_w_reg (
+      .din (lsu_except_ale_ls1 & {1{flush}}),
+      .clk (clk),
+      .en  (reg_en_m),
+      .q   (lsu_except_ale_w));
+
+   dffe_ns #(32) lsu_except_badv_w_reg (
+      .din (lsu_except_badv_ls1 & {1{flush}}),
+      .clk (clk),
+      .en  (reg_en_m),
+      .q   (lsu_except_badv_w));
 
    // bru
    dffe_ns #(1) bru_vld_e_reg (

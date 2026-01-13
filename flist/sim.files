@@ -6,3 +6,4 @@ ${PROJECT_ROOT}/rtl/lib/swrvr_clib.v
 ${PROJECT_ROOT}/rtl/lib/swrvr_dlib.v
 ${PROJECT_ROOT}/rtl/c7bexu_byp.v
 ${PROJECT_ROOT}/rtl/c7bexu_byplog.v
+${PROJECT_ROOT}/rtl/c7bexu_ecl.v

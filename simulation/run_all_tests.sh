@@ -14,3 +14,13 @@ echo ""
 cd ..
 
 
+cd test1_ecl
+echo "test1_ecl"
+if ./simulate.sh | grep PASS; then
+	printf ""
+else
+	printf "Fail!\n"
+	exit
+fi
+echo ""
+cd ..
