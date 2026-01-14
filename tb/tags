@@ -1,0 +1,147 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+alu_res_m	test2_exu_top_tb.v	/^    wire [31:0]      alu_res_m;$/;"	n
+biu_lsu_data	test2_exu_top_tb.v	/^    reg  [63:0]      biu_lsu_data;$/;"	r
+biu_lsu_data_vld	test2_exu_top_tb.v	/^    reg              biu_lsu_data_vld;$/;"	r
+biu_lsu_rd_ack	test2_exu_top_tb.v	/^    reg              biu_lsu_rd_ack;$/;"	r
+biu_lsu_wr_ack	test2_exu_top_tb.v	/^    reg              biu_lsu_wr_ack;$/;"	r
+biu_lsu_wr_fin	test2_exu_top_tb.v	/^    reg              biu_lsu_wr_fin;$/;"	r
+check_result	test0_byp_top_tb.v	/^    task check_result;$/;"	t
+clk	test1_ecl_top_tb.v	/^reg clk;$/;"	r
+clk	test2_exu_top_tb.v	/^    reg clk;$/;"	r
+csr_vld_e	test1_ecl_top_tb.v	/^reg csr_vld_e;$/;"	r
+current_test_name	test2_exu_top_tb.v	/^    reg [79:0] current_test_name;  \/\/ 80 characters for test name$/;"	r
+ecl_byp_rs1_mux_sel_m	test0_byp_top_tb.v	/^    reg ecl_byp_rs1_mux_sel_m;$/;"	r
+ecl_byp_rs1_mux_sel_rf	test0_byp_top_tb.v	/^    reg ecl_byp_rs1_mux_sel_rf;$/;"	r
+ecl_byp_rs1_mux_sel_w	test0_byp_top_tb.v	/^    reg ecl_byp_rs1_mux_sel_w;$/;"	r
+ecl_byp_rs2_mux_sel_m	test0_byp_top_tb.v	/^    reg ecl_byp_rs2_mux_sel_m;$/;"	r
+ecl_byp_rs2_mux_sel_rf	test0_byp_top_tb.v	/^    reg ecl_byp_rs2_mux_sel_rf;$/;"	r
+ecl_byp_rs2_mux_sel_w	test0_byp_top_tb.v	/^    reg ecl_byp_rs2_mux_sel_w;$/;"	r
+expected_addr	test2_exu_top_tb.v	/^        reg [31:0] expected_addr;$/;"	r
+expected_data	test2_exu_top_tb.v	/^        reg [31:0] expected_data;$/;"	r
+expected_rs1	test0_byp_top_tb.v	/^        input [31:0] expected_rs1;$/;"	p
+expected_rs2	test0_byp_top_tb.v	/^        input [31:0] expected_rs2;$/;"	p
+exu_ifu_branch	test2_exu_top_tb.v	/^    wire             exu_ifu_branch;$/;"	n
+exu_ifu_brn_addr	test2_exu_top_tb.v	/^    wire [31:0]      exu_ifu_brn_addr;$/;"	n
+exu_ifu_ert_addr	test2_exu_top_tb.v	/^    wire [31:0]      exu_ifu_ert_addr;$/;"	n
+exu_ifu_ertn	test2_exu_top_tb.v	/^    wire             exu_ifu_ertn;$/;"	n
+exu_ifu_except	test2_exu_top_tb.v	/^    wire             exu_ifu_except;$/;"	n
+exu_ifu_isr_addr	test2_exu_top_tb.v	/^    wire [31:0]      exu_ifu_isr_addr;$/;"	n
+exu_ifu_stall	test2_exu_top_tb.v	/^    wire             exu_ifu_stall;$/;"	n
+fail_count	test0_byp_top_tb.v	/^    integer fail_count;$/;"	r
+fail_count	test1_ecl_top_tb.v	/^integer fail_count = 0;$/;"	r
+fail_count	test2_exu_top_tb.v	/^    integer fail_count = 0;$/;"	r
+ifu_exu_alu_a_pc_d	test2_exu_top_tb.v	/^    reg              ifu_exu_alu_a_pc_d;$/;"	r
+ifu_exu_alu_b_imm_d	test2_exu_top_tb.v	/^    reg              ifu_exu_alu_b_imm_d;$/;"	r
+ifu_exu_alu_c_d	test2_exu_top_tb.v	/^    reg  [31:0]      ifu_exu_alu_c_d;$/;"	r
+ifu_exu_alu_double_word_d	test2_exu_top_tb.v	/^    reg              ifu_exu_alu_double_word_d;$/;"	r
+ifu_exu_alu_op_d	test2_exu_top_tb.v	/^    reg  [5:0]       ifu_exu_alu_op_d;$/;"	r
+ifu_exu_alu_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_alu_vld_d;$/;"	r
+ifu_exu_bru_offset_d	test2_exu_top_tb.v	/^    reg  [31:0]      ifu_exu_bru_offset_d;$/;"	r
+ifu_exu_bru_op_d	test2_exu_top_tb.v	/^    reg  [3:0]       ifu_exu_bru_op_d;$/;"	r
+ifu_exu_bru_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_bru_vld_d;$/;"	r
+ifu_exu_csr_raddr_d	test2_exu_top_tb.v	/^    reg  [13:0]      ifu_exu_csr_raddr_d;$/;"	r
+ifu_exu_csr_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_csr_vld_d;$/;"	r
+ifu_exu_csr_waddr_d	test2_exu_top_tb.v	/^    reg  [13:0]      ifu_exu_csr_waddr_d;$/;"	r
+ifu_exu_csr_wen_d	test2_exu_top_tb.v	/^    reg              ifu_exu_csr_wen_d;$/;"	r
+ifu_exu_csr_xchg_d	test2_exu_top_tb.v	/^    reg              ifu_exu_csr_xchg_d;$/;"	r
+ifu_exu_ertn_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_ertn_vld_d;$/;"	r
+ifu_exu_exc_code_d	test2_exu_top_tb.v	/^    reg  [5:0]       ifu_exu_exc_code_d;$/;"	r
+ifu_exu_exc_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_exc_vld_d;$/;"	r
+ifu_exu_imm_shifted_d	test2_exu_top_tb.v	/^    reg  [31:0]      ifu_exu_imm_shifted_d;$/;"	r
+ifu_exu_lsu_double_read_d	test2_exu_top_tb.v	/^    reg              ifu_exu_lsu_double_read_d;$/;"	r
+ifu_exu_lsu_op_d	test2_exu_top_tb.v	/^    reg  [6:0]       ifu_exu_lsu_op_d;$/;"	r
+ifu_exu_lsu_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_lsu_vld_d;$/;"	r
+ifu_exu_mul_double_d	test2_exu_top_tb.v	/^    reg              ifu_exu_mul_double_d;$/;"	r
+ifu_exu_mul_hi_d	test2_exu_top_tb.v	/^    reg              ifu_exu_mul_hi_d;$/;"	r
+ifu_exu_mul_short_d	test2_exu_top_tb.v	/^    reg              ifu_exu_mul_short_d;$/;"	r
+ifu_exu_mul_signed_d	test2_exu_top_tb.v	/^    reg              ifu_exu_mul_signed_d;$/;"	r
+ifu_exu_mul_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_mul_vld_d;$/;"	r
+ifu_exu_pc_d	test2_exu_top_tb.v	/^    reg  [31:0]      ifu_exu_pc_d;$/;"	r
+ifu_exu_rd_d	test2_exu_top_tb.v	/^    reg  [4:0]       ifu_exu_rd_d;$/;"	r
+ifu_exu_rs1_d	test2_exu_top_tb.v	/^    reg  [4:0]       ifu_exu_rs1_d;$/;"	r
+ifu_exu_rs2_d	test2_exu_top_tb.v	/^    reg  [4:0]       ifu_exu_rs2_d;$/;"	r
+ifu_exu_vld_d	test2_exu_top_tb.v	/^    reg              ifu_exu_vld_d;$/;"	r
+ifu_exu_wen_d	test2_exu_top_tb.v	/^    reg              ifu_exu_wen_d;$/;"	r
+init_inputs	test2_exu_top_tb.v	/^    task init_inputs;$/;"	t
+init_signals	test1_ecl_top_tb.v	/^task init_signals;$/;"	t
+integer	test2_exu_top_tb.v	/^        input integer cycles;$/;"	p
+lsu_biu_rd_addr	test2_exu_top_tb.v	/^    wire [31:0]      lsu_biu_rd_addr;$/;"	n
+lsu_biu_rd_req	test2_exu_top_tb.v	/^    wire             lsu_biu_rd_req;$/;"	n
+lsu_biu_wr_addr	test2_exu_top_tb.v	/^    wire [31:0]      lsu_biu_wr_addr;$/;"	n
+lsu_biu_wr_data	test2_exu_top_tb.v	/^    wire [63:0]      lsu_biu_wr_data;$/;"	n
+lsu_biu_wr_req	test2_exu_top_tb.v	/^    wire             lsu_biu_wr_req;$/;"	n
+lsu_biu_wr_strb	test2_exu_top_tb.v	/^    wire [7:0]       lsu_biu_wr_strb;$/;"	n
+lsu_data_ls3	test2_exu_top_tb.v	/^    wire [31:0]      lsu_data_ls3;$/;"	n
+lsu_data_vld_ls3	test2_exu_top_tb.v	/^    wire             lsu_data_vld_ls3;$/;"	n
+lsu_ecl_data_valid_ls3	test1_ecl_top_tb.v	/^reg lsu_ecl_data_valid_ls3;$/;"	r
+lsu_ecl_wr_fin_ls3	test1_ecl_top_tb.v	/^reg lsu_ecl_wr_fin_ls3;$/;"	r
+lsu_ecl_wr_fin_ls3	test2_exu_top_tb.v	/^    wire             lsu_ecl_wr_fin_ls3;$/;"	n
+lsu_except_ale_ls1	test1_ecl_top_tb.v	/^reg lsu_except_ale_ls1;$/;"	r
+lsu_except_ale_ls1	test2_exu_top_tb.v	/^    wire             lsu_except_ale_ls1;$/;"	n
+lsu_except_buserr_ls3	test1_ecl_top_tb.v	/^reg lsu_except_buserr_ls3;$/;"	r
+lsu_except_buserr_ls3	test2_exu_top_tb.v	/^    wire             lsu_except_buserr_ls3;$/;"	n
+lsu_except_ecc_ls3	test1_ecl_top_tb.v	/^reg lsu_except_ecc_ls3;$/;"	r
+lsu_except_ecc_ls3	test2_exu_top_tb.v	/^    wire             lsu_except_ecc_ls3;$/;"	n
+lsu_vld_e	test1_ecl_top_tb.v	/^reg lsu_vld_e;$/;"	r
+lsu_vld_e	test2_exu_top_tb.v	/^    wire             lsu_vld_e;$/;"	n
+lsu_vld_m	test2_exu_top_tb.v	/^    wire             lsu_vld_m;$/;"	n
+pass_count	test0_byp_top_tb.v	/^    integer pass_count;$/;"	r
+pass_count	test1_ecl_top_tb.v	/^integer pass_count = 0;$/;"	r
+pass_count	test2_exu_top_tb.v	/^    integer pass_count = 0;$/;"	r
+passed	test2_exu_top_tb.v	/^        input passed;$/;"	p
+passed	test2_exu_top_tb.v	/^        integer passed;$/;"	r
+pc_e	test2_exu_top_tb.v	/^    wire [31:0]      pc_e;$/;"	n
+pc_m	test2_exu_top_tb.v	/^    wire [31:0]      pc_m;$/;"	n
+pc_w	test2_exu_top_tb.v	/^    wire [31:0]      pc_w;$/;"	n
+print_test_result	test2_exu_top_tb.v	/^    task print_test_result;$/;"	t
+rd_data_m	test0_byp_top_tb.v	/^    reg [31:0] rd_data_m;$/;"	r
+rd_data_w	test0_byp_top_tb.v	/^    reg [31:0] rd_data_w;$/;"	r
+rd_data_w	test2_exu_top_tb.v	/^    wire [31:0]      rd_data_w;$/;"	n
+rd_m	test0_byp_top_tb.v	/^    reg [4:0] rd_m;$/;"	r
+rd_w	test0_byp_top_tb.v	/^    reg [4:0] rd_w;$/;"	r
+rd_w	test2_exu_top_tb.v	/^    wire [4:0]       rd_w;$/;"	n
+reset_system	test2_exu_top_tb.v	/^    task reset_system;$/;"	t
+resetn	test1_ecl_top_tb.v	/^reg resetn;$/;"	r
+resetn	test2_exu_top_tb.v	/^    reg resetn;$/;"	r
+rs1_data_byp_e	test0_byp_top_tb.v	/^    wire [31:0] rs1_data_byp_e;$/;"	n
+rs1_data_d	test2_exu_top_tb.v	/^    wire [31:0]      rs1_data_d;$/;"	n
+rs1_data_e	test0_byp_top_tb.v	/^    reg [31:0] rs1_data_e;$/;"	r
+rs1_e	test0_byp_top_tb.v	/^    reg [4:0] rs1_e;$/;"	r
+rs2_data_byp_e	test0_byp_top_tb.v	/^    wire [31:0] rs2_data_byp_e;$/;"	n
+rs2_data_d	test2_exu_top_tb.v	/^    wire [31:0]      rs2_data_d;$/;"	n
+rs2_data_e	test0_byp_top_tb.v	/^    reg [31:0] rs2_data_e;$/;"	r
+rs2_e	test0_byp_top_tb.v	/^    reg [4:0] rs2_e;$/;"	r
+stall	test1_ecl_top_tb.v	/^wire stall;$/;"	n
+stall_cycles	test2_exu_top_tb.v	/^        integer stall_cycles;$/;"	r
+stall_end_time	test2_exu_top_tb.v	/^        reg [31:0] stall_end_time;$/;"	r
+stall_start_time	test2_exu_top_tb.v	/^        reg [31:0] stall_start_time;$/;"	r
+test_alu_add_instruction	test2_exu_top_tb.v	/^    task test_alu_add_instruction;$/;"	t
+test_bru_branch_instruction	test2_exu_top_tb.v	/^    task test_bru_branch_instruction;$/;"	t
+test_case_1	test0_byp_top_tb.v	/^    task test_case_1;$/;"	t
+test_case_2	test0_byp_top_tb.v	/^    task test_case_2;$/;"	t
+test_case_3	test0_byp_top_tb.v	/^    task test_case_3;$/;"	t
+test_case_4	test0_byp_top_tb.v	/^    task test_case_4;$/;"	t
+test_case_5	test0_byp_top_tb.v	/^    task test_case_5;$/;"	t
+test_count	test0_byp_top_tb.v	/^    integer test_count;$/;"	r
+test_count	test1_ecl_top_tb.v	/^integer test_count = 0;$/;"	r
+test_count	test2_exu_top_tb.v	/^    integer test_count = 0;$/;"	r
+test_csr_stall	test1_ecl_top_tb.v	/^task test_csr_stall;$/;"	t
+test_ld_instruction	test2_exu_top_tb.v	/^    task test_ld_instruction;$/;"	t
+test_lsu_except_ale	test1_ecl_top_tb.v	/^task test_lsu_except_ale;$/;"	t
+test_lsu_normal_end	test1_ecl_top_tb.v	/^task test_lsu_normal_end;$/;"	t
+test_lsu_start_stall	test1_ecl_top_tb.v	/^task test_lsu_start_stall;$/;"	t
+test_name	test0_byp_top_tb.v	/^        input [512:0] test_name;$/;"	p
+test_name	test0_byp_top_tb.v	/^        reg [512:0] test_name;$/;"	r
+test_no_operation	test1_ecl_top_tb.v	/^task test_no_operation;$/;"	t
+top_tb	test0_byp_top_tb.v	/^module top_tb;$/;"	m
+top_tb	test1_ecl_top_tb.v	/^module top_tb();$/;"	m
+top_tb	test2_exu_top_tb.v	/^module top_tb;$/;"	m
+wait_cycles	test2_exu_top_tb.v	/^    task wait_cycles;$/;"	t
+wen_m	test0_byp_top_tb.v	/^    reg wen_m;$/;"	r
+wen_w	test0_byp_top_tb.v	/^    reg wen_w;$/;"	r
+wen_w	test2_exu_top_tb.v	/^    wire             wen_w;$/;"	n

@@ -1,3 +1,5 @@
+`include "defines.vh"
+
 module c7bexu (
    input              clk,
    input              resetn,
@@ -21,7 +23,7 @@ module c7bexu (
    // alu
    input              ifu_exu_alu_vld_d,
    input  [5:0]       ifu_exu_alu_op_d, // ALU_CODE_BIT 6
-   input              ifu_exu_alu_a_pc_d; // to do: in IFU
+   input              ifu_exu_alu_a_pc_d, // to do: in IFU
    input  [31:0]      ifu_exu_alu_c_d,
    input              ifu_exu_alu_double_word_d,
    input              ifu_exu_alu_b_imm_d,
@@ -75,6 +77,19 @@ module c7bexu (
    input              biu_lsu_wr_fin
 );
 
+   // exc
+   wire exc_vld_e;
+   wire exc_vld_m;
+   wire exc_vld_w;
+   wire exc_vld_comb_w;
+
+   wire [5:0] exc_code_e;
+   wire [5:0] exc_code_m;
+   wire [5:0] exc_code_w;
+   wire [5:0] exc_code_comb_w;
+
+
+   //
    wire [31:0] dumb_rdata1_0;
    wire [31:0] dumb_rdata1_1;
    wire [31:0] dumb_rdata2_0;
@@ -82,6 +97,27 @@ module c7bexu (
 
    wire [31:0] rs1_data_d;
    wire [31:0] rs2_data_d;
+
+   wire [31:0] pc_e;
+   wire [31:0] pc_m;
+   wire [31:0] pc_w;
+   wire [4:0] rs1_e;
+   wire [4:0] rs2_e;
+   wire [31:0] rs1_data_e;
+   wire [31:0] rs2_data_e;
+   wire [4:0] rd_e;
+   wire [4:0] rd_m;
+   wire [4:0] rd_w;
+   wire wen_e;
+   wire wen_m;
+   wire wen_w;
+   wire [31:0] imm_shifted_e;
+
+   wire [31:0] rs1_data_byp_e;
+   wire [31:0] rs2_data_byp_e;
+
+   wire [31:0] rd_data_m;
+   wire [31:0] rd_data_w;
 
    c7bexu_rf u_rf (
       .clk                             (clk),
@@ -114,38 +150,6 @@ module c7bexu (
       );
 
 
-   // exc
-   wire exc_vld_e;
-   wire exc_vld_m;
-   wire exc_vld_w;
-   wire exc_vld_comb_w;
-
-   wire [5:0] exc_code_e;
-   wire [5:0] exc_code_m;
-   wire [5:0] exc_code_w;
-
-
-   //
-   wire [31:0] pc_e;
-   wire [31:0] pc_m;
-   wire [31:0] pc_w;
-   wire [4:0] rs1_e;
-   wire [4:0] rs2_e;
-   wire [31:0] rs1_data_e;
-   wire [31:0] rs2_data_e;
-   wire [4:0] rd_e;
-   wire [4:0] rd_m;
-   wire [4:0] rd_w;
-   wire wen_e;
-   wire wen_m;
-   wire wen_w;
-   wire [31:0] imm_shifted_e;
-
-   wire [31:0] rs1_data_byp_e;
-   wire [31:0] rs2_data_byp_e;
-
-   wire [31:0] rd_data_m;
-   wire [31:0] rd_data_w;
 
    c7bexu_byp u_byp(
       .rs1_e                           (rs1_e),
@@ -158,6 +162,8 @@ module c7bexu (
       .rs2_data_e                      (rs2_data_e),
       .rd_data_m                       (rd_data_m),
       .rd_data_w                       (rd_data_w),
+      .rs1_data_byp_e                  (rs1_data_byp_e),
+      .rs2_data_byp_e                  (rs2_data_byp_e)
    );
 
    // alu
@@ -249,6 +255,7 @@ module c7bexu (
 
    // bru
    wire bru_vld_e;
+   wire bru_vld_m;
    wire [3:0] bru_op_e; // BRU_CODE_BIT 4
    wire [31:0] bru_offset_e;
    wire [31:0] bru_a_e;
@@ -267,7 +274,7 @@ module c7bexu (
    assign bru_b_e = rs2_data_e;
    assign bru_pc_e = pc_e;
 
-   bru u_bru(
+   branch u_bru(
       .branch_valid                    (bru_vld_e),
       .branch_op                       (bru_op_e),
       .branch_a                        (bru_a_e),
@@ -323,17 +330,6 @@ module c7bexu (
    );
 
    // csr
-   wire [31:0]                   csr_byp_rdata_d;
-   wire [`LCSR_BIT-1:0]          ecl_csr_raddr_d;
-   wire [`LCSR_BIT-1:0]          ecl_csr_waddr_m;
-   wire [31:0]                   byp_csr_wdata_m;
-   wire [31:0]                   ecl_csr_mask_m;
-   wire                          ecl_csr_wen_m;
-   wire                          ecl_csr_ertn_e;
-   wire                          csr_ecl_crmd_ie;
-   wire                          csr_ecl_timer_intr;
-   wire [5:0]                    ecl_csr_exccode_e;
-
    wire csr_vld_e;
    wire csr_vld_m;
    wire [13:0] csr_raddr_d;
@@ -341,6 +337,7 @@ module c7bexu (
    wire csr_wen_e;
    wire csr_wen_m;
    wire [13:0] csr_waddr_e;
+   wire [13:0] csr_waddr_m;
    wire [31:0] csr_rdata_d;
    wire [31:0] csr_rdata_e;
    wire [31:0] csr_rdata_m;
@@ -364,7 +361,7 @@ module c7bexu (
    wire ertn_vld_w;
 
 
-   c7bexu_csr u_csr(
+   c7bcsr u_csr(
       .clk                             (clk),
       .resetn                          (resetn),
       .csr_rdata                       (csr_rdata_d),
@@ -381,9 +378,9 @@ module c7bexu (
       .ecl_csr_badv_w                  (lsu_except_badv_w), 
       .exu_ifu_except                  (exc_vld_comb_w),
       //.ecl_csr_exccode_e               (exc_code_w),
-      .ecl_csr_exccode                 (exc_code_comb_w),
+      .ecl_csr_exccode_w               (exc_code_comb_w),
       //.ifu_Exu_pc_e                    (pc_w),
-      .ifu_Exu_pc_w                    (pc_w),
+      .ifu_exu_pc_w                    (pc_w),
       //.ecl_csr_ertn_e                  (ertn_vld_w),
       .ecl_csr_ertn_w                  (ertn_vld_w),
 
@@ -395,7 +392,7 @@ module c7bexu (
 
 
    assign rd_data_m = ({32{alu_vld_m}}                    & alu_res_m) |
-                      ({32{lsu_vld_m & lsu_data_vld_ls3}} & lsu_rdata_m) |
+                      ({32{lsu_vld_m & lsu_data_vld_ls3}} & lsu_data_ls3) |
                       ({32{bru_vld_m}}                    & bru_link_pc_m) |
                       ({32{mul_vld_m}}                    & mul_res_m) |
                       ({32{csr_vld_m}}                    & csr_rdata_m);
@@ -406,7 +403,7 @@ module c7bexu (
    //                   bru_vld_m                     ? bru_link_pc_m :
    //                   mul_vld_m                     ? mul_res_m :
    //                   csr_vld_m                     ? csr_rdata_m :
-                                                      '0;
+   //                                                 '0;
 
    assign exu_ifu_branch = bru_branch_w;
    assign exu_ifu_brn_addr = bru_brn_addr_w;
@@ -418,13 +415,15 @@ module c7bexu (
    assign exu_ifu_ert_addr = csr_ert_addr;
 
    assign exc_vld_comb_w = exc_vld_w | lsu_except_ale_w;
-   assign exc_code_comb_w = exc_code | ({6{lsu_except_ale_w}} & 6'h09); // EXC_ALE 
+   assign exc_code_comb_w = exc_code_w | ({6{lsu_except_ale_w}} & 6'h09); // EXC_ALE 
 
 
    wire stall;
    wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
 
-   c7bexu_ecl(
+   assign exu_ifu_stall = stall;
+
+   c7bexu_ecl u_ecl(
       .clk                             (clk),
       .resetn                          (resetn),
 
@@ -447,9 +446,11 @@ module c7bexu (
 
    // Propagated to functional units only for valid instructions that raise no
    // exceptions.
-   wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) | flush;
+   //wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) | flush;
+   wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d);
 
-   wire reg_en_m = ~stall | flush;
+   //wire reg_en_m = ~stall | flush;
+   wire reg_en_m = ~stall;
 
    // exc
    dffe_ns #(1) exc_vld_e_reg (
@@ -458,7 +459,7 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (exc_vld_e));
 
-   dffe_ns #(6) exc_vld_e_reg (
+   dffe_ns #(6) exc_code_e_reg (
       .din (ifu_exu_exc_code_d & {6{flush}}),
       .clk (clk),
       .en  (reg_en_d),
@@ -647,8 +648,8 @@ module c7bexu (
       .clk (clk),
       .q   (lsu_vld_m));
 
-   dffe_ns #(6) lsu_op_e_reg (
-      .din (ifu_exu_lsu_op_d & {6{flush}}),
+   dffe_ns #(7) lsu_op_e_reg (
+      .din (ifu_exu_lsu_op_d & {7{flush}}),
       .clk (clk),
       .en  (reg_en_d),
       .q   (lsu_op_e));
@@ -661,13 +662,13 @@ module c7bexu (
 
    // m equvalent to ls1, for lsu instructions that raise ale, lsu will not stall 
    dffe_ns #(1) lsu_except_ale_w_reg (
-      .din (lsu_except_ale_ls1 & {1{flush}}),
+      .din (lsu_except_ale_ls1),
       .clk (clk),
       .en  (reg_en_m),
       .q   (lsu_except_ale_w));
 
    dffe_ns #(32) lsu_except_badv_w_reg (
-      .din (lsu_except_badv_ls1 & {1{flush}}),
+      .din (lsu_except_badv_ls1 & {32{flush}}),
       .clk (clk),
       .en  (reg_en_m),
       .q   (lsu_except_badv_w));
@@ -685,19 +686,19 @@ module c7bexu (
       .q   (bru_vld_m));
 
    dffe_ns #(4) bru_op_e_reg (
-      .din (ifu_exu_bru_op_d & {6{flush}}),
+      .din (ifu_exu_bru_op_d & {4{flush}}),
       .clk (clk),
       .en  (reg_en_d),
       .q   (bru_op_e));
 
    dffe_ns #(32) bru_offset_e_reg (
-      .din (ifu_exu_bru_offset_d & {6{flush}}),
+      .din (ifu_exu_bru_offset_d & {32{flush}}),
       .clk (clk),
       .en  (reg_en_d),
       .q   (bru_offset_e));
 
-   dff_ns #(1) bru_link_pc_m_reg (
-      .din (bru_link_pc_e & {1{flush}}),
+   dff_ns #(32) bru_link_pc_m_reg (
+      .din (bru_link_pc_e & {32{flush}}),
       .clk (clk),
       .q   (bru_link_pc_m));
 
@@ -707,18 +708,18 @@ module c7bexu (
       .q   (bru_branch_m));
 
    dffe_ns #(1) bru_branch_w_reg (
-      .din (bru_branch_m & {1{flush}}),
+      .din (bru_branch_m),
       .clk (clk),
       .en  (reg_en_m),
       .q   (bru_branch_w));
 
    dff_ns #(32) bru_brn_addr_m_reg (
-      .din (bru_brn_addr_e & {1{flush}}),
+      .din (bru_brn_addr_e & {32{flush}}),
       .clk (clk),
       .q   (bru_brn_addr_m));
 
    dffe_ns #(32) bru_brn_addr_w_reg (
-      .din (bru_brn_addr_m & {1{flush}}),
+      .din (bru_brn_addr_m & {32{flush}}),
       .clk (clk),
       .en  (reg_en_m),
       .q   (bru_brn_addr_w));
@@ -772,13 +773,13 @@ module c7bexu (
       .q   (csr_vld_m));
 
    dffe_ns #(32) csr_rdata_e_reg (
-      .din (csr_rdata_d & {1{flush}}),
+      .din (csr_rdata_d & {32{flush}}),
       .clk (clk),
       .en  (reg_en_d),
       .q   (csr_rdata_e));
 
    dff_ns #(32) csr_rdata_m_reg (
-      .din (csr_rdata_e & {1{flush}}),
+      .din (csr_rdata_e & {32{flush}}),
       .clk (clk),
       .q   (csr_rdata_m));
 
@@ -799,24 +800,24 @@ module c7bexu (
       .clk (clk),
       .q   (csr_wen_m));
 
-   dffe_ns #(32) csr_waddr_e_reg (
-      .din (ifu_exu_csr_waddr_d & {1{flush}}),
+   dffe_ns #(14) csr_waddr_e_reg (
+      .din (ifu_exu_csr_waddr_d & {14{flush}}),
       .clk (clk),
       .en  (reg_en_d),
       .q   (csr_waddr_e));
 
-   dff_ns #(32) csr_waddr_m_reg (
-      .din (csr_waddr_e),
+   dff_ns #(14) csr_waddr_m_reg (
+      .din (csr_waddr_e & {14{flush}}),
       .clk (clk),
       .q   (csr_waddr_m));
 
    dff_ns #(32) csr_wdata_m_reg (
-      .din (csr_wdata_e),
+      .din (csr_wdata_e & {32{flush}}),
       .clk (clk),
       .q   (csr_wdata_m));
 
    dff_ns #(32) csr_mask_m_reg (
-      .din (csr_mask_e),
+      .din (csr_mask_e & {32{flush}}),
       .clk (clk),
       .q   (csr_mask_m));
 

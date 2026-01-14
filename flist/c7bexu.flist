@@ -1,4 +1,5 @@
 ${PROJECT_ROOT}/rtl/c7bexu_byp.v
 ${PROJECT_ROOT}/rtl/c7bexu_byplog.v
 ${PROJECT_ROOT}/rtl/c7bexu_ecl.v
+${PROJECT_ROOT}/rtl/c7bexu_rf.v
 ${PROJECT_ROOT}/rtl/c7bexu.v

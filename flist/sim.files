@@ -1,9 +1,22 @@
 ${PROJECT_ROOT}/simulation/altera_mf.v
 
 #+incdir+${PROJECT_ROOT}/rtl/import
++incdir+${PROJECT_ROOT}/rtl/c7blsu/rtl
++incdir+${PROJECT_ROOT}/rtl/c7bcsr/rtl
 
 ${PROJECT_ROOT}/rtl/lib/swrvr_clib.v
 ${PROJECT_ROOT}/rtl/lib/swrvr_dlib.v
 ${PROJECT_ROOT}/rtl/c7bexu_byp.v
 ${PROJECT_ROOT}/rtl/c7bexu_byplog.v
 ${PROJECT_ROOT}/rtl/c7bexu_ecl.v
+${PROJECT_ROOT}/rtl/c7bexu_rf.v
+${PROJECT_ROOT}/rtl/c7bexu.v
+
+${PROJECT_ROOT}/rtl/alu.v
+${PROJECT_ROOT}/rtl/branch.v
+${PROJECT_ROOT}/rtl/mul32x32.v
+${PROJECT_ROOT}/rtl/mul64x64.v
+
+-f ${PROJECT_ROOT}/rtl/c7blsu/flist/c7blsu.flist
+-f ${PROJECT_ROOT}/rtl/c7bcsr/flist/c7bcsr.flist
+
