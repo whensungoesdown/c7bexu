@@ -12,6 +12,9 @@ module c7bexu_ecl (
    input              lsu_wr_fin_ls3,
 
    input              csr_vld_e
+   //input              bru_branch_e,
+   //input              exc_vld_e,
+   //input              ertn_vld_e
 );
 
    wire lsu_stall;
@@ -58,6 +61,46 @@ module c7bexu_ecl (
 
    assign csr_stall = csr_vld_e | csr_stall_q;
 
+
+//   wire bru_stall;
+//   wire bru_stall_in = bru_branch_e;
+//   wire bru_stall_q;
+//
+//   dffrl_ns #(1) bru_stall_reg (
+//      .din   (bru_stall_in),
+//      .clk   (clk),
+//      .rst_l (resetn),
+//      .q     (bru_stall_q));
+//
+//   assign bru_stall = bru_branch_e | bru_stall_q;
+//
+//
+//   wire exc_stall;
+//   wire exc_stall_in = exc_vld_e;
+//   wire exc_stall_q;
+//
+//   dffrl_ns #(1) exc_stall_reg (
+//      .din   (exc_stall_in),
+//      .clk   (clk),
+//      .rst_l (resetn),
+//      .q     (exc_stall_q));
+//
+//   assign exc_stall = exc_vld_e | exc_stall_q;
+//
+//
+//   wire ertn_stall;
+//   wire ertn_stall_in = ertn_vld_e;
+//   wire ertn_stall_q;
+//
+//   dffrl_ns #(1) ertn_stall_reg (
+//      .din   (ertn_stall_in),
+//      .clk   (clk),
+//      .rst_l (resetn),
+//      .q     (ertn_stall_q));
+//
+//   assign ertn_stall = ertn_vld_e | ertn_stall_q;
+
+   //assign stall = lsu_stall | csr_stall | bru_stall | exc_stall | ertn_stall;
    assign stall = lsu_stall | csr_stall;
 
 endmodule

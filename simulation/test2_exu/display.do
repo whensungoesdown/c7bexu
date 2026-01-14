@@ -104,3 +104,12 @@ add wave -divider
 add wave -position end  result:/top_tb/u_dut/rd_data_m
 add wave -position end  result:/top_tb/u_dut/rd_data_w
 add wave -divider
+add wave -position end  result:/top_tb/u_dut/u_bru/bru_taken
+add wave -position end  result:/top_tb/u_dut/u_bru/bru_target
+add wave -position end  result:/top_tb/u_dut/exu_ifu_branch
+add wave -position end  result:/top_tb/u_dut/exu_ifu_brn_addr
+add wave -position end  result:/top_tb/u_dut/exu_ifu_ert_addr
+add wave -position end  result:/top_tb/u_dut/exu_ifu_ertn
+add wave -position end  result:/top_tb/u_dut/exu_ifu_except
+add wave -position end  result:/top_tb/u_dut/exu_ifu_isr_addr
+add wave -divider

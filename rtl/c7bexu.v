@@ -419,7 +419,8 @@ module c7bexu (
 
 
    wire stall;
-   wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
+   //wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
+   wire flush = exu_ifu_except | exu_ifu_ertn | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall;
 
@@ -436,7 +437,10 @@ module c7bexu (
       .lsu_data_valid_ls3              (lsu_data_vld_ls3),
       .lsu_wr_fin_ls3                  (lsu_wr_fin_ls3),
 
-      .csr_vld_e                       (csr_vld_e)  // stall two cycle will be engough
+      .csr_vld_e                       (csr_vld_e)  // stall two cycles will be engough
+      //.bru_branch_e                    (bru_branch_e), // stall two cycles until branch_e propagate through _w
+      //.exc_vld_e                       (exc_vld_e), // stall two cycles
+      //.ertn_vld_e                      (ertn_vld_e) // stall two cycles
    );
 
 
@@ -447,15 +451,15 @@ module c7bexu (
    // Propagated to functional units only for valid instructions that raise no
    // exceptions.
    //wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) | flush;
-   wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d);
-   //wire reg_en_d = 1'b1;
+   //wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d);
+   wire reg_en_d = 1'b1;
 
    //wire reg_en_m = ~stall | flush;
    wire reg_en_m = ~stall;
 
    // exc
    dff_ns #(1) exc_vld_e_reg (
-      .din (ifu_exu_exc_vld_d & ifu_exu_vld_d),
+      .din (ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush),
       .clk (clk),
       //.en  (reg_en_d),
       .q   (exc_vld_e));
@@ -494,7 +498,8 @@ module c7bexu (
    dffe_ns #(32) pc_e_reg (
       .din (ifu_exu_pc_d),
       .clk (clk),
-      .en  (reg_en_d),
+      //.en  (reg_en_d),
+      .en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .q   (pc_e));
 
    dff_ns #(32) pc_m_reg (
@@ -535,7 +540,8 @@ module c7bexu (
    dffe_ns #(5) rd_e_reg (
       .din (ifu_exu_rd_d),
       .clk (clk),
-      .en  (reg_en_d),
+      //.en  (reg_en_d),
+      .en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .q   (rd_e));
 
    dffrl_ns #(5) rd_m_reg (
@@ -552,9 +558,10 @@ module c7bexu (
       .q   (rd_w));
 
    dffrle_ns #(1) wen_e_reg (
-      .din (ifu_exu_wen_d),
+      .din (ifu_exu_wen_d & ~flush),
       .clk (clk),
-      .en  (reg_en_d),
+      //.en  (reg_en_d),
+      .en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .rst_l (resetn),
       .q   (wen_e));
 
@@ -585,7 +592,7 @@ module c7bexu (
 
    // alu
    dff_ns #(1) alu_vld_e_reg (
-      .din (ifu_exu_alu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d)),
+      .din (ifu_exu_alu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
       //.en  (reg_en_d),
       .q   (alu_vld_e));
@@ -645,7 +652,7 @@ module c7bexu (
 
    // lsu
    dffrl_ns #(1) lsu_vld_e_reg (
-      .din (ifu_exu_lsu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d)),
+      .din (ifu_exu_lsu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
       //.en  (reg_en_d),
       .rst_l (resetn),
@@ -684,7 +691,7 @@ module c7bexu (
 
    // bru
    dff_ns #(1) bru_vld_e_reg (
-      .din (ifu_exu_bru_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d)),
+      .din (ifu_exu_bru_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
       //.en  (reg_en_d),
       .q   (bru_vld_e));
@@ -735,7 +742,7 @@ module c7bexu (
 
    // mul
    dff_ns #(1) mul_vld_e_reg (
-      .din (ifu_exu_mul_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d)),
+      .din (ifu_exu_mul_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
       //.en  (reg_en_d),
       .q   (mul_vld_e));
@@ -771,7 +778,7 @@ module c7bexu (
 
    // csr
    dffrl_ns #(1) csr_vld_e_reg (
-      .din (ifu_exu_csr_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d)),
+      .din (ifu_exu_csr_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
       //.en  (reg_en_d),
       .rst_l (resetn),
@@ -834,7 +841,7 @@ module c7bexu (
 
    // ertn
    dff_ns #(1) ertn_vld_e_reg (
-      .din (ifu_exu_ertn_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d)),
+      .din (ifu_exu_ertn_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
       //.en  (reg_en_d),
       .q   (ertn_vld_e));
