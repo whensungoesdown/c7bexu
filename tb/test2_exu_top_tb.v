@@ -100,7 +100,7 @@ module top_tb;
     integer fail_count = 0;
     
     // Test name storage (Verilog-2001 doesn't support string arguments in functions)
-    reg [79:0] current_test_name;  // 80 characters for test name
+    reg [256:0] current_test_name;  // 80 characters for test name
     
     // Clock generation
     always #5 clk = ~clk;
@@ -435,15 +435,18 @@ module top_tb;
         
         // Setup ADD instruction: add.w $r1, $r2, $r3
         ifu_exu_vld_d = 1;
-        ifu_exu_pc_d = 32'h8000_1000;
+        ifu_exu_pc_d = 32'h1C00_0000;
         ifu_exu_rs1_d = 2;     // $r2
         ifu_exu_rs2_d = 3;     // $r3
         ifu_exu_rd_d = 1;      // $r1
         ifu_exu_wen_d = 1;
         
+	u_dut.u_rf.regs[2] = 32'h10;
+	u_dut.u_rf.regs[3] = 32'h0a;
+
         // ALU valid
         ifu_exu_alu_vld_d = 1;
-        ifu_exu_alu_op_d = 6'b000000;  // ADD opcode (assumed)
+        ifu_exu_alu_op_d = 6'b000001;  // ADD opcode
         ifu_exu_alu_a_pc_d = 0;
         ifu_exu_alu_b_imm_d = 0;
         
@@ -454,11 +457,27 @@ module top_tb;
         ifu_exu_csr_vld_d = 0;
         
         // Wait for instruction completion
-        wait_cycles(5);
+        wait_cycles(1);
+
+        ifu_exu_vld_d = 0;
+        ifu_exu_pc_d = 32'h0;
+        ifu_exu_rs1_d = 0;     // $r2
+        ifu_exu_rs2_d = 0;     // $r3
+        ifu_exu_rd_d = 0;      // $r1
+        ifu_exu_wen_d = 0;
+        
+        // ALU valid
+        ifu_exu_alu_vld_d = 0;
+        ifu_exu_alu_op_d = 6'b000000;
+        ifu_exu_alu_a_pc_d = 0;
+        ifu_exu_alu_b_imm_d = 0;
         
         // Check results
         passed = 1;
-        
+       
+        // wait for the result propagate through _e _m _w	
+        wait_cycles(3);
+
         // Check rd_w and wen_w
         if (rd_w !== 1) begin
             $display("ERROR: rd_w is %0d, expected 1", rd_w);
@@ -467,6 +486,11 @@ module top_tb;
         
         if (wen_w !== 1) begin
             $display("ERROR: wen_w is %0d, expected 1", wen_w);
+            passed = 0;
+        end
+
+        if (rd_data_w !== 32'h1a) begin
+            $display("ERROR: rd_data_w is %0x, expected 0x1a", rd_data_w);
             passed = 0;
         end
         
@@ -558,8 +582,8 @@ module top_tb;
         $display("========================================\n");
         
         // Run test cases
-        test_ld_instruction();
-        //test_alu_add_instruction();
+        //test_ld_instruction();
+        test_alu_add_instruction();
         //test_bru_branch_instruction();
         
         // Add more test cases here...

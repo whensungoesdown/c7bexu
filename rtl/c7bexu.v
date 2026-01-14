@@ -454,13 +454,13 @@ module c7bexu (
 
    // exc
    dffe_ns #(1) exc_vld_e_reg (
-      .din (ifu_exu_exc_vld_d & {1{flush}}),
+      .din (ifu_exu_exc_vld_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (exc_vld_e));
 
    dffe_ns #(6) exc_code_e_reg (
-      .din (ifu_exu_exc_code_d & {6{flush}}),
+      .din (ifu_exu_exc_code_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (exc_code_e));
@@ -469,193 +469,200 @@ module c7bexu (
    // halted. The exception code is then propagated down the pipeline and
    // resolved at the write-back (_w) stage following a pipeline drain.
    dff_ns #(1) exc_vld_m_reg (
-      .din (exc_vld_e & {1{flush}}),
+      .din (exc_vld_e),
       .clk (clk),
       .q   (exc_vld_m));
 
    dff_ns #(6) exc_code_m_reg (
-      .din (exc_code_e & {6{flush}}),
+      .din (exc_code_e),
       .clk (clk),
       .q   (exc_code_m));
 
    dff_ns #(1) exc_vld_w_reg (
-      .din (exc_vld_m & {1{flush}}),
+      .din (exc_vld_m),
       .clk (clk),
       .q   (exc_vld_w));
 
    dff_ns #(6) exc_code_w_reg (
-      .din (exc_code_m & {6{flush}}),
+      .din (exc_code_m),
       .clk (clk),
       .q   (exc_code_w));
 
 
    //
    dffe_ns #(32) pc_e_reg (
-      .din (ifu_exu_pc_d & {32{flush}}),
+      .din (ifu_exu_pc_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (pc_e));
 
    dff_ns #(32) pc_m_reg (
-      .din (pc_e & {32{flush}}),
+      .din (pc_e),
       .clk (clk),
       .q   (pc_m));
 
    dffe_ns #(32) pc_w_reg (
-      .din (pc_m & {32{flush}}),
+      .din (pc_m),
       .clk (clk),
       .en  (reg_en_m),
       .q   (pc_w));
 
    dffe_ns #(5) rs1_e_reg (
-      .din (ifu_exu_rs1_d & {5{flush}}),
+      .din (ifu_exu_rs1_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (rs1_e));
 
    dffe_ns #(5) rs2_e_reg (
-      .din (ifu_exu_rs2_d & {5{flush}}),
+      .din (ifu_exu_rs2_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (rs2_e));
 
    dffe_ns #(32) rs1_data_e_reg (
-      .din (rs1_data_d & {32{flush}}),
+      .din (rs1_data_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (rs1_data_e));
 
    dffe_ns #(32) rs2_data_e_reg (
-      .din (rs2_data_d & {32{flush}}),
+      .din (rs2_data_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (rs2_data_e));
 
    dffe_ns #(5) rd_e_reg (
-      .din (ifu_exu_rd_d & {5{flush}}),
+      .din (ifu_exu_rd_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (rd_e));
 
-   dff_ns #(5) rd_m_reg (
-      .din (rd_e & {5{flush}}),
+   dffrl_ns #(5) rd_m_reg (
+      .din (rd_e),
       .clk (clk),
+      .rst_l (resetn),
       .q   (rd_m));
 
-   dff_ns #(5) rd_w_reg (
-      .din (rd_m & {5{flush}}),
+   dffrl_ns #(5) rd_w_reg (
+      .din (rd_m),
       .clk (clk),
+      .rst_l (resetn),
       .q   (rd_w));
 
-   dffe_ns #(1) wen_e_reg (
-      .din (ifu_exu_wen_d & {1{flush}}),
+   dffrle_ns #(1) wen_e_reg (
+      .din (ifu_exu_wen_d),
       .clk (clk),
       .en  (reg_en_d),
+      .rst_l (resetn),
       .q   (wen_e));
 
-   dff_ns #(1) wen_m_reg (
-      .din (wen_e & {1{flush}}),
+   dffrl_ns #(1) wen_m_reg (
+      .din (wen_e),
       .clk (clk),
+      .rst_l (resetn),
       .q   (wen_m));
 
-   dffe_ns #(1) wen_w_reg (
-      .din (wen_m & {1{flush}}),
+   dffrle_ns #(1) wen_w_reg (
+      .din (wen_m),
       .clk (clk),
       .en  (reg_en_m),
+      .rst_l (resetn),
       .q   (wen_w));
 
    dffe_ns #(32) imm_shifted_e_reg (
-      .din (ifu_exu_imm_shifted_d & {32{flush}}),
+      .din (ifu_exu_imm_shifted_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (imm_shifted_e));
 
    dffe_ns #(32) rd_data_w_reg (
-      .din (rd_data_m & {32{flush}}),
+      .din (rd_data_m),
       .clk (clk),
       .en  (reg_en_m),
       .q   (rd_data_w));
 
    // alu
    dffe_ns #(1) alu_vld_e_reg (
-      .din (ifu_exu_alu_vld_d & {1{flush}}),
+      .din (ifu_exu_alu_vld_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (alu_vld_e));
 
    dff_ns #(1) alu_vld_m_reg (
-      .din (alu_vld_e & {1{flush}}),
+      .din (alu_vld_e),
       .clk (clk),
       .q   (alu_vld_m));
 
-   dffe_ns #(32) alu_a_e_reg (
-      .din (alu_a_d & {32{flush}}),
-      .clk (clk),
-      .en  (reg_en_d),
-      .q   (alu_a_e));
-
-   dffe_ns #(32) alu_b_e_reg (
-      .din (alu_b_d & {32{flush}}),
-      .clk (clk),
-      .en  (reg_en_d),
-      .q   (alu_b_e));
+//   dffe_ns #(32) alu_a_e_reg (
+//      .din (alu_a_d),
+//      .clk (clk),
+//      .en  (reg_en_d),
+//      .q   (alu_a_e));
+//
+//   dffe_ns #(32) alu_b_e_reg (
+//      .din (alu_b_d),
+//      .clk (clk),
+//      .en  (reg_en_d),
+//      .q   (alu_b_e));
 
    dffe_ns #(6) alu_op_e_reg (
-      .din (ifu_exu_alu_op_d & {6{flush}}),
+      .din (ifu_exu_alu_op_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (alu_op_e));
 
    dffe_ns #(1) alu_a_pc_e_reg (
-      .din (ifu_exu_alu_a_pc_d & {1{flush}}),
+      .din (ifu_exu_alu_a_pc_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (alu_a_pc_e));
 
    dffe_ns #(32) alu_c_e_reg (
-      .din (ifu_exu_alu_c_d & {32{flush}}),
+      .din (ifu_exu_alu_c_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (alu_c_e));
 
    dffe_ns #(1) alu_double_word_e_reg (
-      .din (ifu_exu_alu_double_word_d & {1{flush}}),
+      .din (ifu_exu_alu_double_word_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (alu_double_word_e));
 
    dffe_ns #(1) alu_b_imm_e_reg (
-      .din (ifu_exu_alu_b_imm_d & {1{flush}}),
+      .din (ifu_exu_alu_b_imm_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (alu_b_imm_e));
 
    dff_ns #(32) alu_res_m_reg (
-      .din (alu_res_e & {32{flush}}),
+      .din (alu_res_e),
       .clk (clk),
       .q   (alu_res_m));
 
 
    // lsu
-   dffe_ns #(1) lsu_vld_e_reg (
-      .din (ifu_exu_lsu_vld_d & {1{flush}}),
+   dffrle_ns #(1) lsu_vld_e_reg (
+      .din (ifu_exu_lsu_vld_d),
       .clk (clk),
       .en  (reg_en_d),
+      .rst_l (resetn),
       .q   (lsu_vld_e));
 
-   dff_ns #(1) lsu_vld_m_reg (
-      .din (lsu_vld_e & {1{flush}}),
+   dffrl_ns #(1) lsu_vld_m_reg (
+      .din (lsu_vld_e),
       .clk (clk),
+      .rst_l (resetn),
       .q   (lsu_vld_m));
 
    dffe_ns #(7) lsu_op_e_reg (
-      .din (ifu_exu_lsu_op_d & {7{flush}}),
+      .din (ifu_exu_lsu_op_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (lsu_op_e));
 
    dffe_ns #(1) lsu_double_read_e_reg (
-      .din (ifu_exu_lsu_double_read_d & {1{flush}}),
+      .din (ifu_exu_lsu_double_read_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (lsu_double_read_e));
@@ -668,42 +675,42 @@ module c7bexu (
       .q   (lsu_except_ale_w));
 
    dffe_ns #(32) lsu_except_badv_w_reg (
-      .din (lsu_except_badv_ls1 & {32{flush}}),
+      .din (lsu_except_badv_ls1),
       .clk (clk),
       .en  (reg_en_m),
       .q   (lsu_except_badv_w));
 
    // bru
    dffe_ns #(1) bru_vld_e_reg (
-      .din (ifu_exu_bru_vld_d & {1{flush}}),
+      .din (ifu_exu_bru_vld_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (bru_vld_e));
 
    dff_ns #(1) bru_vld_m_reg (
-      .din (bru_vld_e & {1{flush}}),
+      .din (bru_vld_e),
       .clk (clk),
       .q   (bru_vld_m));
 
    dffe_ns #(4) bru_op_e_reg (
-      .din (ifu_exu_bru_op_d & {4{flush}}),
+      .din (ifu_exu_bru_op_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (bru_op_e));
 
    dffe_ns #(32) bru_offset_e_reg (
-      .din (ifu_exu_bru_offset_d & {32{flush}}),
+      .din (ifu_exu_bru_offset_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (bru_offset_e));
 
    dff_ns #(32) bru_link_pc_m_reg (
-      .din (bru_link_pc_e & {32{flush}}),
+      .din (bru_link_pc_e),
       .clk (clk),
       .q   (bru_link_pc_m));
 
    dff_ns #(1) bru_branch_m_reg (
-      .din (bru_branch_e & {1{flush}}),
+      .din (bru_branch_e),
       .clk (clk),
       .q   (bru_branch_m));
 
@@ -714,127 +721,129 @@ module c7bexu (
       .q   (bru_branch_w));
 
    dff_ns #(32) bru_brn_addr_m_reg (
-      .din (bru_brn_addr_e & {32{flush}}),
+      .din (bru_brn_addr_e),
       .clk (clk),
       .q   (bru_brn_addr_m));
 
    dffe_ns #(32) bru_brn_addr_w_reg (
-      .din (bru_brn_addr_m & {32{flush}}),
+      .din (bru_brn_addr_m),
       .clk (clk),
       .en  (reg_en_m),
       .q   (bru_brn_addr_w));
 
    // mul
    dffe_ns #(1) mul_vld_e_reg (
-      .din (ifu_exu_mul_vld_d & {1{flush}}),
+      .din (ifu_exu_mul_vld_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (mul_vld_e));
 
    dff_ns #(1) mul_vld_m_reg (
-      .din (mul_vld_e & {1{flush}}),
+      .din (mul_vld_e),
       .clk (clk),
       .q   (mul_vld_m));
 
    dffe_ns #(1) mul_signed_e_reg (
-      .din (ifu_exu_mul_signed_d & {1{flush}}),
+      .din (ifu_exu_mul_signed_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (mul_signed_e));
 
    dffe_ns #(1) mul_double_e_reg (
-      .din (ifu_exu_mul_double_d & {1{flush}}),
+      .din (ifu_exu_mul_double_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (mul_double_e));
 
    dffe_ns #(1) mul_hi_e_reg (
-      .din (ifu_exu_mul_hi_d & {1{flush}}),
+      .din (ifu_exu_mul_hi_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (mul_hi_e));
 
    dffe_ns #(1) mul_short_e_reg (
-      .din (ifu_exu_mul_short_d & {1{flush}}),
+      .din (ifu_exu_mul_short_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (mul_short_e));
 
    // csr
-   dffe_ns #(1) csr_vld_e_reg (
-      .din (ifu_exu_csr_vld_d & {1{flush}}),
+   dffrle_ns #(1) csr_vld_e_reg (
+      .din (ifu_exu_csr_vld_d),
       .clk (clk),
       .en  (reg_en_d),
+      .rst_l (resetn),
       .q   (csr_vld_e));
 
-   dff_ns #(1) csr_vld_m_reg (
-      .din (csr_vld_e & {1{flush}}),
+   dffrl_ns #(1) csr_vld_m_reg (
+      .din (csr_vld_e),
       .clk (clk),
+      .rst_l (resetn),
       .q   (csr_vld_m));
 
    dffe_ns #(32) csr_rdata_e_reg (
-      .din (csr_rdata_d & {32{flush}}),
+      .din (csr_rdata_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (csr_rdata_e));
 
    dff_ns #(32) csr_rdata_m_reg (
-      .din (csr_rdata_e & {32{flush}}),
+      .din (csr_rdata_e),
       .clk (clk),
       .q   (csr_rdata_m));
 
    dffe_ns #(1) csr_xchg_e_reg (
-      .din (ifu_exu_csr_xchg_d & {1{flush}}),
+      .din (ifu_exu_csr_xchg_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (csr_xchg_e));
 
    dffe_ns #(1) csr_wen_e_reg (
-      .din (ifu_exu_csr_wen_d & {1{flush}}),
+      .din (ifu_exu_csr_wen_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (csr_wen_e));
 
    dff_ns #(1) csr_wen_m_reg (
-      .din (csr_wen_e & {1{flush}}),
+      .din (csr_wen_e),
       .clk (clk),
       .q   (csr_wen_m));
 
    dffe_ns #(14) csr_waddr_e_reg (
-      .din (ifu_exu_csr_waddr_d & {14{flush}}),
+      .din (ifu_exu_csr_waddr_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (csr_waddr_e));
 
    dff_ns #(14) csr_waddr_m_reg (
-      .din (csr_waddr_e & {14{flush}}),
+      .din (csr_waddr_e),
       .clk (clk),
       .q   (csr_waddr_m));
 
    dff_ns #(32) csr_wdata_m_reg (
-      .din (csr_wdata_e & {32{flush}}),
+      .din (csr_wdata_e),
       .clk (clk),
       .q   (csr_wdata_m));
 
    dff_ns #(32) csr_mask_m_reg (
-      .din (csr_mask_e & {32{flush}}),
+      .din (csr_mask_e),
       .clk (clk),
       .q   (csr_mask_m));
 
    // ertn
    dffe_ns #(1) ertn_vld_e_reg (
-      .din (ifu_exu_ertn_vld_d & {1{flush}}),
+      .din (ifu_exu_ertn_vld_d),
       .clk (clk),
       .en  (reg_en_d),
       .q   (ertn_vld_e));
 
    dff_ns #(1) ertn_vld_m_reg (
-      .din (ertn_vld_e & {1{flush}}),
+      .din (ertn_vld_e),
       .clk (clk),
       .q   (ertn_vld_m));
 
    dffe_ns #(1) ertn_vld_w_reg (
-      .din (ertn_vld_m & {1{flush}}),
+      .din (ertn_vld_m),
       .clk (clk),
       .en  (reg_en_m),
       .q   (ertn_vld_w));

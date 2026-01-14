@@ -63,4 +63,25 @@ add wave -divider
 add wave -position end  result:/top_tb/u_dut/reg_en_d
 add wave -position end  result:/top_tb/u_dut/reg_en_m
 add wave -divider
-
+add wave -position end  result:/top_tb/u_dut/alu_a_e
+add wave -position end  result:/top_tb/u_dut/alu_a_pc_e
+add wave -position end  result:/top_tb/u_dut/alu_b_e
+add wave -position end  result:/top_tb/u_dut/alu_b_imm_e
+add wave -position end  result:/top_tb/u_dut/alu_c_e
+add wave -position end  result:/top_tb/u_dut/alu_double_word_e
+add wave -position end  result:/top_tb/u_dut/alu_op_e
+add wave -position end  result:/top_tb/u_dut/alu_res_e
+add wave -position end  result:/top_tb/u_dut/alu_res_m
+add wave -position end  result:/top_tb/u_dut/alu_vld_e
+add wave -position end  result:/top_tb/u_dut/alu_vld_m
+add wave -divider
+add wave -position end  result:/top_tb/pc_e
+add wave -position end  result:/top_tb/pc_m
+add wave -position end  result:/top_tb/pc_w
+add wave -position end  result:/top_tb/u_dut/rs1_data_byp_e
+add wave -position end  result:/top_tb/u_dut/rs2_data_byp_e
+add wave -divider
+add wave -position end  result:/top_tb/u_dut/wen_e
+add wave -position end  result:/top_tb/u_dut/wen_m
+add wave -position end  result:/top_tb/u_dut/wen_w
+add wave -divider
