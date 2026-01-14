@@ -85,14 +85,14 @@ module top_tb;
     wire             wen_w;
     wire [31:0]      rd_data_w;
     wire             lsu_vld_e;
-    wire             lsu_vld_m;
+    //wire             lsu_vld_m;
     wire [31:0]      alu_res_m;
     wire [31:0]      lsu_data_ls3;
     wire             lsu_data_vld_ls3;
     wire             lsu_except_ale_ls1;
     wire             lsu_except_buserr_ls3;
     wire             lsu_except_ecc_ls3;
-    wire             lsu_ecl_wr_fin_ls3;
+    //wire             lsu_ecl_wr_fin_ls3;
     
     // Test statistics
     integer test_count = 0;
@@ -184,14 +184,14 @@ module top_tb;
     assign wen_w = u_dut.wen_w;
     assign rd_data_w = u_dut.rd_data_w;
     assign lsu_vld_e = u_dut.lsu_vld_e;
-    assign lsu_vld_m = u_dut.lsu_vld_m;
+    //assign lsu_vld_m = u_dut.lsu_vld_m;
     assign alu_res_m = u_dut.alu_res_m;
     assign lsu_data_ls3 = u_dut.lsu_data_ls3;
     assign lsu_data_vld_ls3 = u_dut.lsu_data_vld_ls3;
     assign lsu_except_ale_ls1 = u_dut.lsu_except_ale_ls1;
     assign lsu_except_buserr_ls3 = u_dut.lsu_except_buserr_ls3;
     assign lsu_except_ecc_ls3 = u_dut.lsu_except_ecc_ls3;
-    assign lsu_ecl_wr_fin_ls3 = u_dut.lsu_ecl_wr_fin_ls3;
+    //assign lsu_ecl_wr_fin_ls3 = u_dut.lsu_ecl_wr_fin_ls3;
     
     // Task: Initialize all inputs
     task init_inputs;
@@ -296,7 +296,7 @@ module top_tb;
         // Setup LD instruction: ld.w $r5, $r6, 0
         // rs1 = 6, rd = 5, offset = 0
         ifu_exu_vld_d = 1;
-        ifu_exu_pc_d = 32'h8000_0000;
+        ifu_exu_pc_d = 32'h1C00_0000;
         ifu_exu_rs1_d = 6;     // $r6
         ifu_exu_rs2_d = 0;
         ifu_exu_rd_d = 5;      // $r5
@@ -305,7 +305,7 @@ module top_tb;
         
         // LSU valid
         ifu_exu_lsu_vld_d = 1;
-        ifu_exu_lsu_op_d = 7'b0000011;  // LD opcode (assumed)
+        ifu_exu_lsu_op_d = 7'b0000011;  // LD opcode LD_W
         ifu_exu_lsu_double_read_d = 0;
         
         // Other functional units inactive
@@ -319,6 +319,19 @@ module top_tb;
         
         // Wait 1 cycle for instruction to enter E stage
         @(posedge clk);
+
+        ifu_exu_vld_d = 0;
+        ifu_exu_pc_d = 32'h0;
+        ifu_exu_rs1_d = 0;     // $r6
+        ifu_exu_rs2_d = 0;
+        ifu_exu_rd_d = 0;      // $r5
+        ifu_exu_wen_d = 0;     // Writeback needed
+        ifu_exu_imm_shifted_d = 0;  // Offset 0
+        
+        // LSU valid
+        ifu_exu_lsu_vld_d = 0;
+        ifu_exu_lsu_op_d = 7'b0000000;
+        ifu_exu_lsu_double_read_d = 0;
         
         // Record stall status
         if (exu_ifu_stall) begin
@@ -327,8 +340,7 @@ module top_tb;
         end
         
         // Simulate BIU response
-        // Assume data returns at cycle 3
-        repeat(2) @(posedge clk);
+        repeat(4) @(posedge clk);
         
         // Respond to read request at cycle 3
         if (lsu_biu_rd_req) begin
@@ -361,7 +373,7 @@ module top_tb;
         $display("Stall lasted %0d cycles", stall_cycles);
         
         // Wait for instruction completion (reaching W stage)
-        wait_cycles(5);
+        wait_cycles(1);
         
         // Check results
         passed = 1;  // Assume pass
@@ -386,7 +398,7 @@ module top_tb;
         end
         
         // Check 4: pc_w should equal instruction PC
-        if (pc_w !== 32'h8000_0000) begin
+        if (pc_w !== 32'h1C00_0000) begin
             $display("ERROR: pc_w is 0x%h, expected 0x8000_0000", pc_w);
             passed = 0;
         end
@@ -582,7 +594,7 @@ module top_tb;
         $display("========================================\n");
         
         // Run test cases
-        //test_ld_instruction();
+        test_ld_instruction();
         test_alu_add_instruction();
         //test_bru_branch_instruction();
         

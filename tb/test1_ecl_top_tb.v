@@ -34,8 +34,8 @@ reg lsu_vld_e;
 reg lsu_except_ale_ls1;
 reg lsu_except_buserr_ls3;
 reg lsu_except_ecc_ls3;
-reg lsu_ecl_data_valid_ls3;
-reg lsu_ecl_wr_fin_ls3;
+reg lsu_data_valid_ls3;
+reg lsu_wr_fin_ls3;
 reg csr_vld_e;
 
 c7bexu_ecl dut (
@@ -46,8 +46,8 @@ c7bexu_ecl dut (
     .lsu_except_ale_ls1(lsu_except_ale_ls1),
     .lsu_except_buserr_ls3(lsu_except_buserr_ls3),
     .lsu_except_ecc_ls3(lsu_except_ecc_ls3),
-    .lsu_ecl_data_valid_ls3(lsu_ecl_data_valid_ls3),
-    .lsu_ecl_wr_fin_ls3(lsu_ecl_wr_fin_ls3),
+    .lsu_data_valid_ls3(lsu_data_valid_ls3),
+    .lsu_wr_fin_ls3(lsu_wr_fin_ls3),
     .csr_vld_e(csr_vld_e)
 );
 
@@ -60,8 +60,8 @@ begin
     lsu_except_ale_ls1 = 0;
     lsu_except_buserr_ls3 = 0;
     lsu_except_ecc_ls3 = 0;
-    lsu_ecl_data_valid_ls3 = 0;
-    lsu_ecl_wr_fin_ls3 = 0;
+    lsu_data_valid_ls3 = 0;
+    lsu_wr_fin_ls3 = 0;
     csr_vld_e = 0;
 end
 endtask
@@ -172,9 +172,9 @@ begin
     lsu_vld_e = 1;
     @(posedge clk);
     lsu_vld_e = 0;
-    lsu_ecl_data_valid_ls3 = 1;
+    lsu_data_valid_ls3 = 1;
     @(posedge clk);
-    lsu_ecl_data_valid_ls3 = 0;
+    lsu_data_valid_ls3 = 0;
     #10;
     // Stall should be de-asserted after LSU normal completion
     if (stall === 1'b0) begin

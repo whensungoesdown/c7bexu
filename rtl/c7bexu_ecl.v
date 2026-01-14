@@ -8,8 +8,8 @@ module c7bexu_ecl (
    input              lsu_except_ale_ls1,
    input              lsu_except_buserr_ls3, // NOT IMPLEMENTED
    input              lsu_except_ecc_ls3, // NOT IMPLEMENTED
-   input              lsu_ecl_data_valid_ls3,
-   input              lsu_ecl_wr_fin_ls3,
+   input              lsu_data_valid_ls3,
+   input              lsu_wr_fin_ls3,
 
    input              csr_vld_e
 );
@@ -19,7 +19,7 @@ module c7bexu_ecl (
    wire lsu_stall_q;
 
    wire lsu_bgn = lsu_vld_e;
-   wire lsu_end = lsu_except_ale_ls1 | lsu_ecl_data_valid_ls3 | lsu_ecl_wr_fin_ls3;
+   wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3;
 
    // lsu_bgn        : _-______
    // lsu_end        : ______-_
@@ -36,7 +36,8 @@ module c7bexu_ecl (
       .rst_l (resetn),
       .q     (lsu_stall_q));
 
-   assign lsu_stall = lsu_bgn | lsu_stall_q; 
+   //assign lsu_stall = lsu_bgn | lsu_stall_q; 
+   assign lsu_stall = lsu_stall_in; 
 
 
    // Enforced Two-Cycle Stall
