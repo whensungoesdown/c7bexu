@@ -490,48 +490,33 @@ module top_tb;
         ifu_exu_lsu_op_d = 7'b0000000;
         ifu_exu_lsu_double_read_d = 0;
         
-        // Record stall status
-        if (exu_ifu_stall) begin
-            stall_start_time = $time;
-            $display("Stall detected at time %0t", $time);
+        @(posedge clk);
+
+        //// Record stall status
+        //if (exu_ifu_stall) begin
+        //    stall_start_time = $time;
+        //    $display("Stall detected at time %0t", $time);
+        //end
+
+        if (lsu_except_ale_ls1) begin
+            $display("ALE detected at time %0t", $time);
         end
-        
-        // Simulate BIU response
-        repeat(4) @(posedge clk);
-        
-        // Respond to read request at cycle 3
-        if (lsu_biu_rd_req) begin
-            expected_addr = lsu_biu_rd_addr;
-            $display("LSU read request for address: 0x%h", expected_addr);
-            
-            // Return data
-            biu_lsu_rd_ack = 1;
-            @(posedge clk);
-            biu_lsu_rd_ack = 0;
-            
-            // Data valid next cycle
-            @(posedge clk);
-            biu_lsu_data_vld = 1;
-            biu_lsu_data = 64'h1234_5678_abcd_ef00;  // Return test data
-            expected_data = 32'habcd_ef00;  // Lower 32 bits
-            
-            @(posedge clk);
-            biu_lsu_data_vld = 0;
-        end
-        
+
         // Wait for stall to end
         while (exu_ifu_stall) begin
             @(posedge clk);
         end
-        
-        stall_end_time = $time;
-        stall_cycles = (stall_end_time - stall_start_time) / 10;  // 10ns period
-        
-        $display("Stall lasted %0d cycles", stall_cycles);
+        //wait_cycles(1);
+
+        //stall_end_time = $time;
+        //stall_cycles = (stall_end_time - stall_start_time) / 10;  // 10ns period
+        //
+        //$display("Stall lasted %0d cycles", stall_cycles);
+
         
         // Wait for instruction completion (reaching W stage)
-        wait_cycles(1);
-        
+        wait_cycles(2);
+
         // Check results
         passed = 1;  // Assume pass
         
@@ -542,17 +527,17 @@ module top_tb;
         end
         
         // Check 2: wen_w should be 1
-        if (wen_w !== 1) begin
-            $display("ERROR: wen_w is %0d, expected 1", wen_w);
+        if (wen_w !== 0) begin
+            $display("ERROR: wen_w is %0d, expected 0", wen_w);
             passed = 0;
         end
         
-        // Check 3: rd_data_w should equal returned data
-        if (rd_data_w !== expected_data) begin
-            $display("ERROR: rd_data_w is 0x%h, expected 0x%h", 
-                     rd_data_w, expected_data);
-            passed = 0;
-        end
+        //// Check 3: rd_data_w should equal returned data
+        //if (rd_data_w !== expected_data) begin
+        //    $display("ERROR: rd_data_w is 0x%h, expected 0x%h", 
+        //             rd_data_w, expected_data);
+        //    passed = 0;
+        //end
         
         // Check 4: pc_w should equal instruction PC
         if (pc_w !== 32'h1C00_0000) begin
@@ -560,15 +545,16 @@ module top_tb;
             passed = 0;
         end
         
-        // Check 5: Stall cycles should be reasonable (LSU typically needs multiple cycles)
-        if (stall_cycles < 3) begin
-            $display("WARNING: stall cycles (%0d) seems too short for LD", 
-                     stall_cycles);
-        end
+	// No stall when ALE happen
+        //// Check 5: Stall cycles should be reasonable (LSU typically needs multiple cycles)
+        //if (stall_cycles !== 1) begin
+        //    $display("ERROR: stall cycles should be 1 cycle when ALE happen");
+        //    passed = 0;
+        //end
         
         // Check 6: No exception should occur
-        if (exu_ifu_except !== 0) begin
-            $display("ERROR: Unexpected exception");
+        if (exu_ifu_except === 0) begin
+            $display("ERROR: Should be ALE");
             passed = 0;
         end
         
@@ -583,7 +569,56 @@ module top_tb;
             $display("ERROR: Unexpected ertn");
             passed = 0;
         end
+
+
+	//
+	// Second Instruction
+	//
+        // Setup ADD instruction: add.w $r1, $r2, $r3
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_0004;
+        ifu_exu_rs1_d = 2;     // $r2
+        ifu_exu_rs2_d = 3;     // $r3
+        ifu_exu_rd_d = 1;      // $r1
+        ifu_exu_wen_d = 1;
         
+	u_dut.u_rf.regs[2] = 32'h10;
+	u_dut.u_rf.regs[3] = 32'h0a;
+
+        // ALU valid
+        ifu_exu_alu_vld_d = 1;
+        ifu_exu_alu_op_d = 6'b000001;  // ADD opcode
+        ifu_exu_alu_a_pc_d = 0;
+        ifu_exu_alu_b_imm_d = 0;
+        
+        // Other functional units inactive
+        ifu_exu_lsu_vld_d = 0;
+        ifu_exu_bru_vld_d = 0;
+        ifu_exu_mul_vld_d = 0;
+        ifu_exu_csr_vld_d = 0;
+        
+        wait_cycles(1);
+
+        ifu_exu_vld_d = 0;
+        ifu_exu_pc_d = 32'h0;
+        ifu_exu_rs1_d = 0;     // $r2
+        ifu_exu_rs2_d = 0;     // $r3
+        ifu_exu_rd_d = 0;      // $r1
+        ifu_exu_wen_d = 0;
+        
+        // ALU valid
+        ifu_exu_alu_vld_d = 0;
+        ifu_exu_alu_op_d = 6'b000000;
+        ifu_exu_alu_a_pc_d = 0;
+        ifu_exu_alu_b_imm_d = 0;
+
+        @(posedge clk);
+        
+        
+
+        
+        repeat(2) @(posedge clk);
+
         // Restore inputs
         init_inputs();
         
@@ -784,9 +819,10 @@ module top_tb;
         
         wait_cycles(2);
 
-        if (u_dut.u_rf.regs[1] !== 32'h0) begin 
-            $display("ERROR: Seccond instruction not flushed, regs[1] 0x%h, expected 0x0",
-                     u_dut.u_rf.regs[1]);
+        //if (u_dut.u_rf.regs[1] !== 32'h0) begin 
+        if (wen_w !== 0) begin 
+            $display("ERROR: Seccond instruction not flushed, regs[1] 0x%h, wen_w 0x%h, expected 0x0",
+                     u_dut.u_rf.regs[1], wen_w);
             passed = 0;
         end
 
@@ -815,9 +851,9 @@ module top_tb;
         $display("========================================\n");
         
         // Run test cases
-        //test_ld_instruction();
-        //test_ld_instruction_ale(); NOT TESTED
-        //test_alu_add_instruction();
+        test_ld_instruction();
+        test_ld_instruction_ale();
+        test_alu_add_instruction();
         test_bru_branch_instruction();
         
         // Add more test cases here...

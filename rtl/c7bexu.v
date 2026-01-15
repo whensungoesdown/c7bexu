@@ -81,12 +81,12 @@ module c7bexu (
    wire exc_vld_e;
    wire exc_vld_m;
    wire exc_vld_w;
-   wire exc_vld_comb_w;
+   //wire exc_vld_comb_w;
 
    wire [5:0] exc_code_e;
    wire [5:0] exc_code_m;
    wire [5:0] exc_code_w;
-   wire [5:0] exc_code_comb_w;
+   //wire [5:0] exc_code_comb_w;
 
 
    //
@@ -209,7 +209,7 @@ module c7bexu (
    wire [31:0] lsu_data_ls3;
    wire lsu_wr_fin_ls3;
    wire lsu_except_ale_ls1;
-   wire lsu_except_ale_w;
+   wire lsu_except_ale_m;
    wire [31:0] lsu_except_badv_ls1;
    wire [31:0] lsu_except_badv_w;
    wire lsu_except_buserr_ls3;
@@ -376,9 +376,11 @@ module c7bexu (
 
       //.ecl_csr_badv_e                  (lsu_except_badv_w), 
       .ecl_csr_badv_w                  (lsu_except_badv_w), 
-      .exu_ifu_except                  (exc_vld_comb_w),
+      //.exu_ifu_except                  (exc_vld_comb_w),
+      .exu_ifu_except                  (exc_vld_w),
       //.ecl_csr_exccode_e               (exc_code_w),
-      .ecl_csr_exccode_w               (exc_code_comb_w),
+      //.ecl_csr_exccode_w               (exc_code_comb_w),
+      .ecl_csr_exccode_w               (exc_code_w),
       //.ifu_Exu_pc_e                    (pc_w),
       .ifu_exu_pc_w                    (pc_w),
       //.ecl_csr_ertn_e                  (ertn_vld_w),
@@ -408,27 +410,33 @@ module c7bexu (
    assign exu_ifu_branch = bru_branch_w;
    assign exu_ifu_brn_addr = bru_brn_addr_w;
 
-   assign exu_ifu_except = exc_vld_comb_w;
+   //assign exu_ifu_except = exc_vld_comb_w;
+   assign exu_ifu_except = exc_vld_w;
    assign exu_ifu_isr_addr = csr_isr_addr;
 
    assign exu_ifu_ertn = ertn_vld_w;
    assign exu_ifu_ert_addr = csr_ert_addr;
 
-   assign exc_vld_comb_w = exc_vld_w | lsu_except_ale_w;
-   assign exc_code_comb_w = exc_code_w | ({6{lsu_except_ale_w}} & 6'h09); // EXC_ALE 
+//   assign exc_vld_comb_w = exc_vld_w | lsu_except_ale_m;
+//   assign exc_code_comb_w = exc_code_w | ({6{lsu_except_ale_m}} & 6'h09); // EXC_ALE 
 
 
-   wire stall;
+   wire stall_ifu;
+   wire stall_m;
    //wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
+   // should also | exc_vld_e | exc_vld_m to solve illinstr exception?
+   // also | ertn_vld_e | ertn_vld_m
+   // wire flush = exc_vld_e | exc_vld_m | exc_vld_comb_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
    wire flush = exu_ifu_except | exu_ifu_ertn | bru_branch_e | bru_branch_m | bru_branch_w;
 
-   assign exu_ifu_stall = stall;
+   assign exu_ifu_stall = stall_ifu;
 
    c7bexu_ecl u_ecl(
       .clk                             (clk),
       .resetn                          (resetn),
 
-      .stall                           (stall),
+      .stall_ifu                       (stall_ifu),
+      .stall_m                         (stall_m),
 
       .lsu_vld_e                       (lsu_vld_e),
       .lsu_except_ale_ls1              (lsu_except_ale_ls1),
@@ -455,7 +463,9 @@ module c7bexu (
    wire reg_en_d = 1'b1;
 
    //wire reg_en_m = ~stall | flush;
-   wire reg_en_m = ~stall;
+   //wire reg_en_m = ~stall;
+   wire reg_en_m = ~stall_m;
+   wire reg_en_e = ~stall_m;
 
    // exc
    dff_ns #(1) exc_vld_e_reg (
@@ -473,23 +483,25 @@ module c7bexu (
    // When an exception occurs, instruction issue to the functional units is
    // halted. The exception code is then propagated down the pipeline and
    // resolved at the write-back (_w) stage following a pipeline drain.
-   dff_ns #(1) exc_vld_m_reg (
+   dffe_ns #(1) exc_vld_m_reg (
       .din (exc_vld_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (exc_vld_m));
 
-   dff_ns #(6) exc_code_m_reg (
+   dffe_ns #(6) exc_code_m_reg (
       .din (exc_code_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (exc_code_m));
 
    dff_ns #(1) exc_vld_w_reg (
-      .din (exc_vld_m),
+      .din (exc_vld_m | lsu_except_ale_m),
       .clk (clk),
       .q   (exc_vld_w));
 
    dff_ns #(6) exc_code_w_reg (
-      .din (exc_code_m),
+      .din (exc_code_m | ({6{lsu_except_ale_m}} & 6'h09) ), // EXC_ALLE
       .clk (clk),
       .q   (exc_code_w));
 
@@ -498,13 +510,14 @@ module c7bexu (
    dffe_ns #(32) pc_e_reg (
       .din (ifu_exu_pc_d),
       .clk (clk),
-      //.en  (reg_en_d),
-      .en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
+      .en  (reg_en_d),
+      //.en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .q   (pc_e));
 
-   dff_ns #(32) pc_m_reg (
+   dffe_ns #(32) pc_m_reg (
       .din (pc_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (pc_m));
 
    dffe_ns #(32) pc_w_reg (
@@ -537,19 +550,24 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (rs2_data_e));
 
-   dffe_ns #(5) rd_e_reg (
+   // no need reset, but looks nice
+   dffrle_ns #(5) rd_e_reg (
       .din (ifu_exu_rd_d),
       .clk (clk),
-      //.en  (reg_en_d),
-      .en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
+      .en  (reg_en_d),
+      //.en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
+      .rst_l (resetn),
       .q   (rd_e));
 
-   dffrl_ns #(5) rd_m_reg (
+   // need reset for c7bexu_byp logic
+   dffrle_ns #(5) rd_m_reg (
       .din (rd_e),
       .clk (clk),
+      .en  (reg_en_e),
       .rst_l (resetn),
       .q   (rd_m));
 
+   // need reset for c7bexu_byp logic
    dffrle_ns #(5) rd_w_reg (
       .din (rd_m),
       .clk (clk),
@@ -560,19 +578,20 @@ module c7bexu (
    dffrle_ns #(1) wen_e_reg (
       .din (ifu_exu_wen_d & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
-      .en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
+      .en  (reg_en_d),
+      //.en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .rst_l (resetn),
       .q   (wen_e));
 
-   dffrl_ns #(1) wen_m_reg (
+   dffrle_ns #(1) wen_m_reg (
       .din (wen_e),
       .clk (clk),
+      .en  (reg_en_e),
       .rst_l (resetn),
       .q   (wen_m));
 
    dffrle_ns #(1) wen_w_reg (
-      .din (wen_m),
+      .din (wen_m & ~exc_vld_m & ~lsu_except_ale_m), // only when no exception
       .clk (clk),
       .en  (reg_en_m),
       .rst_l (resetn),
@@ -597,9 +616,10 @@ module c7bexu (
       //.en  (reg_en_d),
       .q   (alu_vld_e));
 
-   dff_ns #(1) alu_vld_m_reg (
+   dffe_ns #(1) alu_vld_m_reg (
       .din (alu_vld_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (alu_vld_m));
 
 //   dffe_ns #(32) alu_a_e_reg (
@@ -644,9 +664,10 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (alu_b_imm_e));
 
-   dff_ns #(32) alu_res_m_reg (
+   dffe_ns #(32) alu_res_m_reg (
       .din (alu_res_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (alu_res_m));
 
 
@@ -677,11 +698,11 @@ module c7bexu (
       .q   (lsu_double_read_e));
 
    // m equvalent to ls1, for lsu instructions that raise ale, lsu will not stall 
-   dff_ns #(1) lsu_except_ale_w_reg (
+   dff_ns #(1) lsu_except_ale_m_reg (
       .din (lsu_except_ale_ls1),
       .clk (clk),
       //.en  (reg_en_m), // ale should not affected by alu stall itself 
-      .q   (lsu_except_ale_w));
+      .q   (lsu_except_ale_m));
 
    dff_ns #(32) lsu_except_badv_w_reg (
       .din (lsu_except_badv_ls1),
@@ -696,9 +717,10 @@ module c7bexu (
       //.en  (reg_en_d),
       .q   (bru_vld_e));
 
-   dff_ns #(1) bru_vld_m_reg (
+   dffe_ns #(1) bru_vld_m_reg (
       .din (bru_vld_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (bru_vld_m));
 
    dffe_ns #(4) bru_op_e_reg (
@@ -713,14 +735,16 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (bru_offset_e));
 
-   dff_ns #(32) bru_link_pc_m_reg (
+   dffe_ns #(32) bru_link_pc_m_reg (
       .din (bru_link_pc_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (bru_link_pc_m));
 
-   dff_ns #(1) bru_branch_m_reg (
+   dffe_ns #(1) bru_branch_m_reg (
       .din (bru_branch_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (bru_branch_m));
 
    dffe_ns #(1) bru_branch_w_reg (
@@ -729,9 +753,10 @@ module c7bexu (
       .en  (reg_en_m),
       .q   (bru_branch_w));
 
-   dff_ns #(32) bru_brn_addr_m_reg (
+   dffe_ns #(32) bru_brn_addr_m_reg (
       .din (bru_brn_addr_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (bru_brn_addr_m));
 
    dffe_ns #(32) bru_brn_addr_w_reg (
@@ -747,9 +772,10 @@ module c7bexu (
       //.en  (reg_en_d),
       .q   (mul_vld_e));
 
-   dff_ns #(1) mul_vld_m_reg (
+   dffe_ns #(1) mul_vld_m_reg (
       .din (mul_vld_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (mul_vld_m));
 
    dffe_ns #(1) mul_signed_e_reg (
@@ -784,9 +810,10 @@ module c7bexu (
       .rst_l (resetn),
       .q   (csr_vld_e));
 
-   dffrl_ns #(1) csr_vld_m_reg (
+   dffrle_ns #(1) csr_vld_m_reg (
       .din (csr_vld_e),
       .clk (clk),
+      .en  (reg_en_e),
       .rst_l (resetn),
       .q   (csr_vld_m));
 
@@ -796,9 +823,10 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (csr_rdata_e));
 
-   dff_ns #(32) csr_rdata_m_reg (
+   dffe_ns #(32) csr_rdata_m_reg (
       .din (csr_rdata_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (csr_rdata_m));
 
    dffe_ns #(1) csr_xchg_e_reg (
@@ -813,9 +841,10 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (csr_wen_e));
 
-   dff_ns #(1) csr_wen_m_reg (
+   dffe_ns #(1) csr_wen_m_reg (
       .din (csr_wen_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (csr_wen_m));
 
    dffe_ns #(14) csr_waddr_e_reg (
@@ -824,19 +853,22 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (csr_waddr_e));
 
-   dff_ns #(14) csr_waddr_m_reg (
+   dffe_ns #(14) csr_waddr_m_reg (
       .din (csr_waddr_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (csr_waddr_m));
 
-   dff_ns #(32) csr_wdata_m_reg (
+   dffe_ns #(32) csr_wdata_m_reg (
       .din (csr_wdata_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (csr_wdata_m));
 
-   dff_ns #(32) csr_mask_m_reg (
+   dffe_ns #(32) csr_mask_m_reg (
       .din (csr_mask_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (csr_mask_m));
 
    // ertn
@@ -846,9 +878,10 @@ module c7bexu (
       //.en  (reg_en_d),
       .q   (ertn_vld_e));
 
-   dff_ns #(1) ertn_vld_m_reg (
+   dffe_ns #(1) ertn_vld_m_reg (
       .din (ertn_vld_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (ertn_vld_m));
 
    dffe_ns #(1) ertn_vld_w_reg (

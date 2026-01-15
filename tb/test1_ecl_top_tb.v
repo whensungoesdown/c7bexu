@@ -28,7 +28,8 @@ integer fail_count = 0;
 // ===========================================
 // DUT Interface
 // ===========================================
-wire stall;
+wire stall_ifu;
+wire stall_m;
 
 reg lsu_vld_e;
 reg lsu_except_ale_ls1;
@@ -41,7 +42,8 @@ reg csr_vld_e;
 c7bexu_ecl dut (
     .clk(clk),
     .resetn(resetn),
-    .stall(stall),
+    .stall_ifu(stall_ifu),
+    .stall_m(stall_m),
     .lsu_vld_e(lsu_vld_e),
     .lsu_except_ale_ls1(lsu_except_ale_ls1),
     .lsu_except_buserr_ls3(lsu_except_buserr_ls3),
@@ -75,11 +77,11 @@ begin
     test_count = test_count + 1;
     init_signals;
     #20;
-    if (stall === 1'b0) begin
+    if (stall_ifu === 1'b0) begin
         $display("Test 1: No operation  -> PASS");
         pass_count = pass_count + 1;
     end else begin
-        $display("Test 1: No operation  -> FAIL: stall should be 0");
+        $display("Test 1: No operation  -> FAIL: stall_ifu should be 0");
         fail_count = fail_count + 1;
     end
 end
@@ -88,9 +90,9 @@ endtask
 // ===========================================
 // Test Case 2: CSR Operation Triggers Stall
 // ===========================================
-task test_csr_stall;
+task test_csr_stall_ifu;
 begin
-    $display("[%0t] Test 2: CSR stall", $time);
+    $display("[%0t] Test 2: CSR stall_ifu", $time);
     test_count = test_count + 1;
     init_signals;
     @(posedge clk);
@@ -99,11 +101,11 @@ begin
     csr_vld_e = 0;
     #10;
     // Stall should be asserted for 2 cycles after csr_vld_e
-    if (stall === 1'b1) begin
-        $display("Test 2: CSR stall  -> PASS");
+    if (stall_ifu === 1'b1) begin
+        $display("Test 2: CSR stall_ifu  -> PASS");
         pass_count = pass_count + 1;
     end else begin
-        $display("Test 2: CSR stall  -> FAIL: stall should be 1 for two cycles");
+        $display("Test 2: CSR stall_ifu  -> FAIL: stall_ifu should be 1 for two cycles");
         fail_count = fail_count + 1;
     end
 end
@@ -112,9 +114,9 @@ endtask
 // ===========================================
 // Test Case 3: LSU Start Triggers Stall
 // ===========================================
-task test_lsu_start_stall;
+task test_lsu_start_stall_ifu;
 begin
-    $display("[%0t] Test 3: LSU start stall", $time);
+    $display("[%0t] Test 3: LSU start stall_ifu", $time);
     test_count = test_count + 1;
     init_signals;
     @(posedge clk);
@@ -123,11 +125,11 @@ begin
     lsu_vld_e = 0;
     #10;
     // Stall should be asserted after LSU start
-    if (stall === 1'b1) begin
-        $display("Test 3: LSU start stall  -> PASS");
+    if (stall_ifu === 1'b1) begin
+        $display("Test 3: LSU start stall_ifu  -> PASS");
         pass_count = pass_count + 1;
     end else begin
-        $display("Test 3: LSU start stall  -> FAIL: stall should be 1 after LSU start");
+        $display("Test 3: LSU start stall_ifu  -> FAIL: stall_ifu should be 1 after LSU start");
         fail_count = fail_count + 1;
     end
 end
@@ -138,7 +140,7 @@ endtask
 // ===========================================
 task test_lsu_except_ale;
 begin
-    $display("[%0t] Test 4: LSU exception end stall", $time);
+    $display("[%0t] Test 4: LSU exception end stall_ifu", $time);
     test_count = test_count + 1;
     init_signals;
     @(posedge clk);
@@ -150,11 +152,11 @@ begin
     lsu_except_ale_ls1 = 0;
     #10;
     // Stall should be de-asserted after LSU exception
-    if (stall === 1'b0) begin
-        $display("Test 4: LSU exception end stall  -> PASS");
+    if (stall_ifu === 1'b0) begin
+        $display("Test 4: LSU exception end stall_ifu  -> PASS");
         pass_count = pass_count + 1;
     end else begin
-        $display("Test 4: LSU exception end stall  -> FAIL: stall should be 0 after LSU exception");
+        $display("Test 4: LSU exception end stall_ifu  -> FAIL: stall_ifu should be 0 after LSU exception");
         fail_count = fail_count + 1;
     end
 end
@@ -165,7 +167,7 @@ endtask
 // ===========================================
 task test_lsu_normal_end;
 begin
-    $display("[%0t] Test 5: LSU normal end stall", $time);
+    $display("[%0t] Test 5: LSU normal end stall_ifu", $time);
     test_count = test_count + 1;
     init_signals;
     @(posedge clk);
@@ -177,11 +179,11 @@ begin
     lsu_data_valid_ls3 = 0;
     #10;
     // Stall should be de-asserted after LSU normal completion
-    if (stall === 1'b0) begin
-        $display("Test 5: LSU normal end stall  -> PASS");
+    if (stall_ifu === 1'b0) begin
+        $display("Test 5: LSU normal end stall_ifu  -> PASS");
         pass_count = pass_count + 1;
     end else begin
-        $display("Test 5: LSU normal end stall  -> FAIL: stall should be 0 after LSU normal end");
+        $display("Test 5: LSU normal end stall_ifu  -> FAIL: stall_ifu should be 0 after LSU normal end");
         fail_count = fail_count + 1;
     end
 end
@@ -199,8 +201,8 @@ initial begin
 
     // Execute test cases
     test_no_operation;
-    test_csr_stall;
-    test_lsu_start_stall;
+    test_csr_stall_ifu;
+    test_lsu_start_stall_ifu;
     test_lsu_except_ale;
     test_lsu_normal_end;
 

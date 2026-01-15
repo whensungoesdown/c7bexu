@@ -2,7 +2,8 @@ module c7bexu_ecl (
    input              clk,
    input              resetn,
 
-   output             stall,
+   output             stall_ifu,
+   output             stall_m,
 
    input              lsu_vld_e,
    input              lsu_except_ale_ls1,
@@ -17,7 +18,8 @@ module c7bexu_ecl (
    //input              ertn_vld_e
 );
 
-   wire lsu_stall;
+   wire lsu_stall_ifu;
+   wire lsu_stall_m;
    wire lsu_stall_in;
    wire lsu_stall_q;
 
@@ -29,9 +31,12 @@ module c7bexu_ecl (
    //
    // lsu_stall_in   : _-----__
    // lsu_stall_q    : __-----_
-   // lsu_stall      : _------_
+   // lsu_stall_ifu  : _------_
+   // lsu_stall_m    : __-----_
 
-   assign lsu_stall_in = (lsu_stall_q & ~lsu_end) | lsu_bgn;
+   //assign lsu_stall_in = (lsu_stall_q & ~lsu_end) | lsu_bgn;
+   
+   assign lsu_stall_in = (~lsu_end) & (lsu_bgn | lsu_stall_q);
 
    dffrl_ns #(1) lsu_stall_reg (
       .din   (lsu_stall_in),
@@ -39,8 +44,10 @@ module c7bexu_ecl (
       .rst_l (resetn),
       .q     (lsu_stall_q));
 
-   //assign lsu_stall = lsu_bgn | lsu_stall_q; 
-   assign lsu_stall = lsu_stall_in; 
+   //assign lsu_stall_ifu = lsu_bgn | lsu_stall_q; 
+   assign lsu_stall_ifu = lsu_stall_in; 
+   //assign lsu_stall = lsu_stall_in; 
+   assign lsu_stall_m = lsu_stall_q & ~lsu_end; 
 
 
    // Enforced Two-Cycle Stall
@@ -49,7 +56,8 @@ module c7bexu_ecl (
    // not required by the CSR operations themselves but is a workaround for
    // the current lack of CSR register bypass logic. Since CSR instructions
    // are infrequent, this fixed stall penalty is acceptable.
-   wire csr_stall;
+   wire csr_stall_ifu;
+   wire csr_stall_m;
    wire csr_stall_in = csr_vld_e;
    wire csr_stall_q;
 
@@ -59,7 +67,8 @@ module c7bexu_ecl (
       .rst_l (resetn),
       .q     (csr_stall_q));
 
-   assign csr_stall = csr_vld_e | csr_stall_q;
+   assign csr_stall_ifu = csr_vld_e | csr_stall_q;
+   assign csr_stall_m = csr_stall_q;
 
 
 //   wire bru_stall;
@@ -101,6 +110,8 @@ module c7bexu_ecl (
 //   assign ertn_stall = ertn_vld_e | ertn_stall_q;
 
    //assign stall = lsu_stall | csr_stall | bru_stall | exc_stall | ertn_stall;
-   assign stall = lsu_stall | csr_stall;
+
+   assign stall_ifu = lsu_stall_ifu | csr_stall_ifu;
+   assign stall_m = lsu_stall_m | csr_stall_m;
 
 endmodule

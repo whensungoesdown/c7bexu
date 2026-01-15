@@ -18,9 +18,12 @@ add wave -position end  result:/top_tb/u_dut/exu_ifu_branch
 add wave -position end  result:/top_tb/u_dut/exu_ifu_ertn
 add wave -position end  result:/top_tb/u_dut/exu_ifu_stall
 add wave -position end  result:/top_tb/u_dut/exu_ifu_except
-add wave -position end  result:/top_tb/u_dut/stall
-add wave -position end  result:/top_tb/u_dut/u_ecl/csr_stall
-add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall
+add wave -position end  result:/top_tb/u_dut/stall_ifu
+add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_ifu
+add wave -position end  result:/top_tb/u_dut/u_ecl/csr_stall_ifu
+add wave -position end  result:/top_tb/u_dut/stall_m
+add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_m
+add wave -position end  result:/top_tb/u_dut/u_ecl/csr_stall_m
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_in
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_q
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_bgn
@@ -31,11 +34,9 @@ add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_except_ecc_ls3
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_data_valid_ls3
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_wr_fin_ls3
 add wave -divider
-add wave -position end  result:/top_tb/u_dut/exc_code_comb_w
 add wave -position end  result:/top_tb/u_dut/exc_code_e
 add wave -position end  result:/top_tb/u_dut/exc_code_m
 add wave -position end  result:/top_tb/u_dut/exc_code_w
-add wave -position end  result:/top_tb/u_dut/exc_vld_comb_w
 add wave -position end  result:/top_tb/u_dut/exc_vld_e
 add wave -position end  result:/top_tb/u_dut/exc_vld_m
 add wave -position end  result:/top_tb/u_dut/exc_vld_w
@@ -51,7 +52,7 @@ add wave -position end  result:/top_tb/u_dut/lsu_data_ls3
 add wave -position end  result:/top_tb/u_dut/lsu_data_vld_ls3
 add wave -position end  result:/top_tb/u_dut/lsu_double_read_e
 add wave -position end  result:/top_tb/u_dut/lsu_except_ale_ls1
-add wave -position end  result:/top_tb/u_dut/lsu_except_ale_w
+add wave -position end  result:/top_tb/u_dut/lsu_except_ale_m
 add wave -position end  result:/top_tb/u_dut/lsu_except_badv_ls1
 add wave -position end  result:/top_tb/u_dut/lsu_except_badv_w
 add wave -position end  result:/top_tb/u_dut/lsu_except_buserr_ls3
@@ -112,4 +113,13 @@ add wave -position end  result:/top_tb/u_dut/exu_ifu_ert_addr
 add wave -position end  result:/top_tb/u_dut/exu_ifu_ertn
 add wave -position end  result:/top_tb/u_dut/exu_ifu_except
 add wave -position end  result:/top_tb/u_dut/exu_ifu_isr_addr
+add wave -divider
+add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_align_res_ls3
+add wave -position end  result:/top_tb/u_dut/u_lsu/data_rdata_input_ls3
+add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_shift_ls1
+add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_shift_ls2
+add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_shift_ls3
+add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_align_mode_ls1
+add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_align_mode_ls2
+add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_align_mode_ls3
 add wave -divider
