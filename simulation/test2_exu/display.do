@@ -21,9 +21,9 @@ add wave -position end  result:/top_tb/u_dut/exu_ifu_except
 add wave -position end  result:/top_tb/u_dut/stall_ifu
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_ifu
 add wave -position end  result:/top_tb/u_dut/u_ecl/csr_stall_ifu
-add wave -position end  result:/top_tb/u_dut/stall_m
-add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_m
-add wave -position end  result:/top_tb/u_dut/u_ecl/csr_stall_m
+add wave -position end  result:/top_tb/u_dut/stall_reg_mw
+add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_reg_mw
+add wave -position end  result:/top_tb/u_dut/u_ecl/csr_stall_reg_mw
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_in
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_stall_q
 add wave -position end  result:/top_tb/u_dut/u_ecl/lsu_bgn

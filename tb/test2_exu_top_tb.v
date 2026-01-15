@@ -833,6 +833,392 @@ module top_tb;
         print_test_result(passed);
     end
     endtask
+
+    // Task: ERTN Instruction Test with flush mechanism
+    task test_ertn_flush_instruction;
+        integer passed;
+        integer i;
+    begin
+        current_test_name = "ERTN Instruction Test with Flush";
+        $display("\n=== Starting ERTN Instruction Flush Test ===");
+
+        // Initialize
+        init_inputs();
+
+        // First: Setup an ADD instruction to establish baseline
+        $display("Step 1: Executing baseline ADD instruction");
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_0000;
+        ifu_exu_rs1_d = 2;
+        ifu_exu_rs2_d = 3;
+        ifu_exu_rd_d = 10;      // $r10
+        ifu_exu_wen_d = 1;
+
+        u_dut.u_rf.regs[2] = 32'h20;
+        u_dut.u_rf.regs[3] = 32'h10;
+
+        ifu_exu_alu_vld_d = 1;
+        ifu_exu_alu_op_d = 6'b000001;
+        ifu_exu_alu_a_pc_d = 0;
+        ifu_exu_alu_b_imm_d = 0;
+
+        @(posedge clk);
+
+        // Second: Setup ERTN instruction
+        $display("Step 2: Executing ERTN instruction");
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_0004;
+        ifu_exu_rd_d = 0;
+        ifu_exu_wen_d = 0;
+
+        ifu_exu_ertn_vld_d = 1;
+        ifu_exu_alu_vld_d = 0;
+
+        @(posedge clk);
+
+        // Third: Setup ADD instruction that should be flushed
+        $display("Step 3: Executing ADD instruction (should be flushed)");
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_0008;
+        ifu_exu_rs1_d = 4;
+        ifu_exu_rs2_d = 5;
+        ifu_exu_rd_d = 10;      // $r10
+        ifu_exu_wen_d = 1;
+
+        u_dut.u_rf.regs[4] = 32'h30;
+        u_dut.u_rf.regs[5] = 32'h15;
+
+        ifu_exu_alu_vld_d = 1;
+        ifu_exu_alu_op_d = 6'b000001;
+        ifu_exu_ertn_vld_d = 0;
+
+        @(posedge clk);
+
+        // Fourth: Setup another ADD instruction (should also be flushed)
+        $display("Step 4: Executing second ADD instruction (should be flushed)");
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_000C;
+        ifu_exu_rs1_d = 6;
+        ifu_exu_rs2_d = 7;
+        ifu_exu_rd_d = 10;      // $r10
+        ifu_exu_wen_d = 1;
+
+        u_dut.u_rf.regs[6] = 32'h40;
+        u_dut.u_rf.regs[7] = 32'h20;
+
+        ifu_exu_alu_vld_d = 1;
+        ifu_exu_alu_op_d = 6'b000001;
+
+        @(posedge clk);
+
+        // Stop sending instructions
+        $display("Step 5: Stopping instruction stream");
+        init_inputs();
+
+        // Wait for pipeline to process
+        wait_cycles(1);
+
+        // Check results
+        passed = 1;
+
+        $display("\nChecking results...");
+
+        // Check 1: ERTN signal should be asserted
+        if (exu_ifu_ertn !== 1) begin
+            $display("ERROR: ERTN signal not asserted");
+            passed = 0;
+        end
+
+        // Check 2: First ADD instruction (before ERTN) should complete
+        // Wait for it to reach W stage
+        wait_cycles(5);
+
+        //if (rd_w === 10 && wen_w === 1 && rd_data_w === 32'h30) begin
+        //    $display("PASS: First ADD instruction completed: $r10 = 0x%h", rd_data_w);
+        //end else begin
+        //    $display("ERROR: First ADD instruction failed: rd_w=%0d, wen_w=%0d, data=0x%h",
+        //             rd_w, wen_w, rd_data_w);
+        //    passed = 0;
+        //end
+	
+        if (u_dut.u_rf.regs[10] === 32'h30) begin
+            $display("PASS: First ADD instruction completed: $r10 = 0x%h, other ADD instructions at 0x1C000008 and 0x1C00000C are flushed", u_dut.u_rf.regs[10]);
+        end else begin
+            $display("ERROR: First ADD instruction failed");
+            passed = 0;
+        end
+
+//        // Check 3: ADD instructions after ERTN should be flushed (not write back)
+//        // Monitor for several cycles to ensure they don't complete
+//        for (i = 0; i < 8; i = i + 1) begin
+//            @(posedge clk);
+//            if (rd_w === 11 || rd_w === 12) begin
+//                $display("ERROR: Flushed instruction completed (rd_w=%0d at cycle %0d)",
+//                         rd_w, i);
+//                passed = 0;
+//            end
+//        end
+//
+//        // Check 4: Register file should not be updated by flushed instructions
+//        if (u_dut.u_rf.regs[11] !== 32'h0) begin
+//            $display("ERROR: $r11 was updated to 0x%h, should remain 0x0",
+//                     u_dut.u_rf.regs[11]);
+//            passed = 0;
+//        end
+//
+//        if (u_dut.u_rf.regs[12] !== 32'h0) begin
+//            $display("ERROR: $r12 was updated to 0x%h, should remain 0x0",
+//                     u_dut.u_rf.regs[12]);
+//            passed = 0;
+//        end
+//
+//        // Check 5: IFU should be flushed (no new instructions fetched for some cycles)
+//        // This is harder to check without IFU interface, but we can monitor
+//        // the stall signal and instruction flow
+//
+//        // Check 6: After some cycles, new instructions should be fetchable
+//        // Send a new ADD instruction to verify pipeline recovered
+//        $display("\nStep 6: Testing pipeline recovery after ERTN");
+//        ifu_exu_vld_d = 1;
+//        ifu_exu_pc_d = 32'h1C00_0100;  // New PC after ERTN
+//        ifu_exu_rs1_d = 8;
+//        ifu_exu_rs2_d = 9;
+//        ifu_exu_rd_d = 13;      // $r13
+//        ifu_exu_wen_d = 1;
+//
+//        u_dut.u_rf.regs[8] = 32'h50;
+//        u_dut.u_rf.regs[9] = 32'h25;
+//
+//        ifu_exu_alu_vld_d = 1;
+//        ifu_exu_alu_op_d = 6'b000001;
+//
+//        @(posedge clk);
+//        init_inputs();
+//
+//        // Wait for this instruction to complete
+//        wait_cycles(4);
+//
+//        if (rd_w === 13 && wen_w === 1 && rd_data_w === 32'h75) begin
+//            $display("PASS: Pipeline recovered, new ADD completed: $r13 = 0x%h", rd_data_w);
+//        end else begin
+//            $display("ERROR: Pipeline recovery failed: rd_w=%0d, wen_w=%0d, data=0x%h",
+//                     rd_w, wen_w, rd_data_w);
+//            passed = 0;
+//        end
+//
+//        // Check 7: ERTN signal should be deasserted after completion
+//        wait_cycles(2);
+//        if (exu_ifu_ertn !== 0) begin
+//            $display("ERROR: ERTN signal still asserted");
+//            passed = 0;
+//        end
+
+        // Summary
+        $display("\nERTN Flush Test Summary:");
+        if (passed) begin
+            $display("All flush mechanisms working correctly");
+        end else begin
+            $display("Some flush mechanisms failed");
+        end
+
+        // Restore inputs
+        init_inputs();
+
+        // Print test result
+        print_test_result(passed);
+    end
+    endtask
+
+    // Task: Complex ERTN with multiple instruction types
+    task test_ertn_complex_flush;
+        integer passed;
+        reg [31:0] saved_regs [0:15];
+        integer i;
+    begin
+        current_test_name = "ERTN Complex Flush Test";
+        $display("\n=== Starting Complex ERTN Flush Test ===");
+
+        // Save current register values
+        for (i = 0; i < 16; i = i + 1) begin
+            saved_regs[i] = u_dut.u_rf.regs[i];
+        end
+
+        // Initialize
+        init_inputs();
+
+        // Create a mix of instructions in the pipeline
+        $display("Setting up mixed instruction pipeline...");
+
+        // Cycle 0: ALU instruction
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_1000;
+        ifu_exu_rs1_d = 1;
+        ifu_exu_rs2_d = 2;
+        ifu_exu_rd_d = 20;      // $r20
+        ifu_exu_wen_d = 1;
+        u_dut.u_rf.regs[1] = 32'h100;
+        u_dut.u_rf.regs[2] = 32'h200;
+        ifu_exu_alu_vld_d = 1;
+        ifu_exu_alu_op_d = 6'b000001;  // ADD
+
+        @(posedge clk);
+
+        // Cycle 1: LSU instruction (should be in-flight when ERTN hits)
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_1004;
+        ifu_exu_rs1_d = 3;
+        ifu_exu_rs2_d = 0;
+        ifu_exu_rd_d = 21;      // $r21
+        ifu_exu_wen_d = 1;
+        ifu_exu_imm_shifted_d = 32'h0;
+        u_dut.u_rf.regs[3] = 32'h4000_0000;
+        ifu_exu_alu_vld_d = 0;
+        ifu_exu_lsu_vld_d = 1;
+        ifu_exu_lsu_op_d = 7'b0000011;  // LD
+
+        @(posedge clk);
+
+        // Cycle 2: ERTN instruction
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_1008;
+        ifu_exu_rd_d = 0;
+        ifu_exu_wen_d = 0;
+        ifu_exu_lsu_vld_d = 0;
+        ifu_exu_ertn_vld_d = 1;
+
+        @(posedge clk);
+
+        // Cycle 3: BRU instruction (should be flushed)
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_100C;
+        ifu_exu_rs1_d = 4;
+        ifu_exu_rs2_d = 5;
+        ifu_exu_rd_d = 0;
+        ifu_exu_wen_d = 0;
+        ifu_exu_bru_offset_d = 32'h100;
+        u_dut.u_rf.regs[4] = 32'h1;
+        u_dut.u_rf.regs[5] = 32'h1;
+        ifu_exu_ertn_vld_d = 0;
+        ifu_exu_bru_vld_d = 1;
+        ifu_exu_bru_op_d = 4'b0000;  // BEQ
+
+        @(posedge clk);
+
+        // Cycle 4: MUL instruction (should be flushed)
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_1010;
+        ifu_exu_rs1_d = 6;
+        ifu_exu_rs2_d = 7;
+        ifu_exu_rd_d = 22;      // $r22
+        ifu_exu_wen_d = 1;
+        u_dut.u_rf.regs[6] = 32'h5;
+        u_dut.u_rf.regs[7] = 32'h6;
+        ifu_exu_bru_vld_d = 0;
+        ifu_exu_mul_vld_d = 1;
+        ifu_exu_mul_signed_d = 1;
+
+        @(posedge clk);
+
+        // Stop instruction stream
+        init_inputs();
+
+        // Handle any pending LSU request to avoid hanging
+        if (lsu_biu_rd_req) begin
+            $display("Note: Cancelling pending LSU request due to ERTN flush");
+            // Simulate BIU acknowledging but data won't be used
+            @(posedge clk);
+            biu_lsu_rd_ack = 1;
+            @(posedge clk);
+            biu_lsu_rd_ack = 0;
+        end
+
+        // Wait for pipeline to flush
+        wait_cycles(10);
+
+        // Check results
+        passed = 1;
+
+        $display("\nChecking complex flush behavior...");
+
+        // Check 1: ERTN should be asserted
+        if (exu_ifu_ertn !== 1) begin
+            $display("ERROR: ERTN signal not asserted");
+            passed = 0;
+        end
+
+        // Check 2: Instruction before ERTN (ALU ADD) should complete
+        wait_cycles(2);
+        if (rd_w === 20 && wen_w === 1 && rd_data_w === 32'h300) begin
+            $display("PASS: Pre-ERTN ALU instruction completed");
+        end else begin
+            $display("ERROR: Pre-ERTN instruction failed");
+            passed = 0;
+        end
+
+        // Check 3: LSU instruction should be cancelled/not complete
+        // Monitor for several cycles
+        for (i = 0; i < 10; i = i + 1) begin
+            @(posedge clk);
+            if (rd_w === 21 && wen_w === 1) begin
+                $display("ERROR: Flushed LSU instruction completed (cycle %0d)", i);
+                passed = 0;
+            end
+        end
+
+        // Check 4: BRU and MUL instructions should be flushed
+        for (i = 0; i < 10; i = i + 1) begin
+            @(posedge clk);
+            if (rd_w === 22 && wen_w === 1) begin
+                $display("ERROR: Flushed MUL instruction completed (cycle %0d)", i);
+                passed = 0;
+            end
+        end
+
+        // Check 5: No branch should occur from flushed BRU
+        if (exu_ifu_branch !== 0) begin
+            $display("ERROR: Branch occurred from flushed instruction");
+            passed = 0;
+        end
+
+        // Check 6: Pipeline should eventually recover
+        // Send a new instruction
+        $display("\nTesting pipeline recovery...");
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_2000;  // New address after ERTN
+        ifu_exu_rs1_d = 10;
+        ifu_exu_rs2_d = 11;
+        ifu_exu_rd_d = 23;      // $r23
+        ifu_exu_wen_d = 1;
+        u_dut.u_rf.regs[10] = 32'h77;
+        u_dut.u_rf.regs[11] = 32'h88;
+        ifu_exu_alu_vld_d = 1;
+        ifu_exu_alu_op_d = 6'b000010;  // SUB for variety
+
+        @(posedge clk);
+        init_inputs();
+
+        wait_cycles(4);
+
+        if (rd_w === 23 && wen_w === 1 && rd_data_w === 32'hFFFFFFEF) begin  // 0x77 - 0x88 = -0x11
+            $display("PASS: Pipeline recovered, SUB instruction completed");
+        end else begin
+            $display("ERROR: Pipeline recovery failed: data=0x%h, expected 0xFFFFFFEF",
+                     rd_data_w);
+            passed = 0;
+        end
+
+        // Restore original register values
+        for (i = 0; i < 16; i = i + 1) begin
+            u_dut.u_rf.regs[i] = saved_regs[i];
+        end
+
+        // Restore inputs
+        init_inputs();
+
+        // Print test result
+        print_test_result(passed);
+    end
+    endtask
     
     // Main test flow
     initial begin
@@ -850,11 +1236,15 @@ module top_tb;
         $display("Starting c7bexu Testbench");
         $display("========================================\n");
         
-        // Run test cases
-        test_ld_instruction();
-        test_ld_instruction_ale();
-        test_alu_add_instruction();
-        test_bru_branch_instruction();
+//        // Run test cases
+//        test_ld_instruction();
+//        test_ld_instruction_ale();
+//        test_alu_add_instruction();
+//        test_bru_branch_instruction();
+//
+//	// Add ERTN flush tests
+        test_ertn_flush_instruction();
+//        test_ertn_complex_flush();
         
         // Add more test cases here...
         

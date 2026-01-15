@@ -426,8 +426,8 @@ module c7bexu (
    //wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
    // should also | exc_vld_e | exc_vld_m to solve illinstr exception?
    // also | ertn_vld_e | ertn_vld_m
-   // wire flush = exc_vld_e | exc_vld_m | exc_vld_comb_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
-   wire flush = exu_ifu_except | exu_ifu_ertn | bru_branch_e | bru_branch_m | bru_branch_w;
+   wire flush = exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   //wire flush = exu_ifu_except | exu_ifu_ertn | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall_ifu;
 
