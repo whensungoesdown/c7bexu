@@ -14,3 +14,10 @@ echo "test1_ecl"
 ./clean.sh
 echo ""
 cd ..
+
+
+cd test2_exu
+echo "test2_exu"
+./clean.sh
+echo ""
+cd ..

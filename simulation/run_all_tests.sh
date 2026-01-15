@@ -24,3 +24,15 @@ else
 fi
 echo ""
 cd ..
+
+
+cd test2_exu
+echo "test2_exu"
+if ./simulate.sh | grep PASS; then
+	printf ""
+else
+	printf "Fail!\n"
+	exit
+fi
+echo ""
+cd ..

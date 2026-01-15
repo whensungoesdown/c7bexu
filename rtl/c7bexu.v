@@ -422,7 +422,7 @@ module c7bexu (
 
 
    wire stall_ifu;
-   wire stall_m;
+   wire stall_reg_mw;
    //wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
    // should also | exc_vld_e | exc_vld_m to solve illinstr exception?
    // also | ertn_vld_e | ertn_vld_m
@@ -436,7 +436,7 @@ module c7bexu (
       .resetn                          (resetn),
 
       .stall_ifu                       (stall_ifu),
-      .stall_m                         (stall_m),
+      .stall_reg_mw                    (stall_reg_mw),
 
       .lsu_vld_e                       (lsu_vld_e),
       .lsu_except_ale_ls1              (lsu_except_ale_ls1),
@@ -464,8 +464,8 @@ module c7bexu (
 
    //wire reg_en_m = ~stall | flush;
    //wire reg_en_m = ~stall;
-   wire reg_en_m = ~stall_m;
-   wire reg_en_e = ~stall_m;
+   wire reg_en_m = ~stall_reg_mw;
+   wire reg_en_e = ~stall_reg_mw;
 
    // exc
    dff_ns #(1) exc_vld_e_reg (

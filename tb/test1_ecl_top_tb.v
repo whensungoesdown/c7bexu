@@ -29,7 +29,7 @@ integer fail_count = 0;
 // DUT Interface
 // ===========================================
 wire stall_ifu;
-wire stall_m;
+wire stall_reg_mw;
 
 reg lsu_vld_e;
 reg lsu_except_ale_ls1;
@@ -43,7 +43,7 @@ c7bexu_ecl dut (
     .clk(clk),
     .resetn(resetn),
     .stall_ifu(stall_ifu),
-    .stall_m(stall_m),
+    .stall_reg_mw(stall_reg_mw),
     .lsu_vld_e(lsu_vld_e),
     .lsu_except_ale_ls1(lsu_except_ale_ls1),
     .lsu_except_buserr_ls3(lsu_except_buserr_ls3),

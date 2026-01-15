@@ -3,7 +3,7 @@ module c7bexu_ecl (
    input              resetn,
 
    output             stall_ifu,
-   output             stall_m,
+   output             stall_reg_mw,
 
    input              lsu_vld_e,
    input              lsu_except_ale_ls1,
@@ -19,7 +19,7 @@ module c7bexu_ecl (
 );
 
    wire lsu_stall_ifu;
-   wire lsu_stall_m;
+   wire lsu_stall_reg_mw;
    wire lsu_stall_in;
    wire lsu_stall_q;
 
@@ -32,7 +32,7 @@ module c7bexu_ecl (
    // lsu_stall_in   : _-----__
    // lsu_stall_q    : __-----_
    // lsu_stall_ifu  : _------_
-   // lsu_stall_m    : __-----_
+   // lsu_stall_reg_mw   : __-----_
 
    //assign lsu_stall_in = (lsu_stall_q & ~lsu_end) | lsu_bgn;
    
@@ -47,7 +47,7 @@ module c7bexu_ecl (
    //assign lsu_stall_ifu = lsu_bgn | lsu_stall_q; 
    assign lsu_stall_ifu = lsu_stall_in; 
    //assign lsu_stall = lsu_stall_in; 
-   assign lsu_stall_m = lsu_stall_q & ~lsu_end; 
+   assign lsu_stall_reg_mw = lsu_stall_q & ~lsu_end; 
 
 
    // Enforced Two-Cycle Stall
@@ -57,7 +57,7 @@ module c7bexu_ecl (
    // the current lack of CSR register bypass logic. Since CSR instructions
    // are infrequent, this fixed stall penalty is acceptable.
    wire csr_stall_ifu;
-   wire csr_stall_m;
+   wire csr_stall_reg_mw;
    wire csr_stall_in = csr_vld_e;
    wire csr_stall_q;
 
@@ -68,7 +68,7 @@ module c7bexu_ecl (
       .q     (csr_stall_q));
 
    assign csr_stall_ifu = csr_vld_e | csr_stall_q;
-   assign csr_stall_m = csr_stall_q;
+   assign csr_stall_reg_mw = csr_stall_q;
 
 
 //   wire bru_stall;
@@ -112,6 +112,6 @@ module c7bexu_ecl (
    //assign stall = lsu_stall | csr_stall | bru_stall | exc_stall | ertn_stall;
 
    assign stall_ifu = lsu_stall_ifu | csr_stall_ifu;
-   assign stall_m = lsu_stall_m | csr_stall_m;
+   assign stall_reg_mw = lsu_stall_reg_mw | csr_stall_reg_mw;
 
 endmodule
