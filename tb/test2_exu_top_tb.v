@@ -1063,7 +1063,17 @@ module top_tb;
 
         @(posedge clk);
 
-        // Cycle 1: LSU instruction (should be in-flight when ERTN hits)
+        // Cycle 1: ERTN instruction
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_1008;
+        ifu_exu_rd_d = 0;
+        ifu_exu_wen_d = 0;
+        ifu_exu_lsu_vld_d = 0;
+        ifu_exu_ertn_vld_d = 1;
+
+        @(posedge clk);
+
+        // Cycle 2: LSU instruction (should be flushed)
         ifu_exu_vld_d = 1;
         ifu_exu_pc_d = 32'h1C00_1004;
         ifu_exu_rs1_d = 3;
@@ -1075,16 +1085,6 @@ module top_tb;
         ifu_exu_alu_vld_d = 0;
         ifu_exu_lsu_vld_d = 1;
         ifu_exu_lsu_op_d = 7'b0000011;  // LD
-
-        @(posedge clk);
-
-        // Cycle 2: ERTN instruction
-        ifu_exu_vld_d = 1;
-        ifu_exu_pc_d = 32'h1C00_1008;
-        ifu_exu_rd_d = 0;
-        ifu_exu_wen_d = 0;
-        ifu_exu_lsu_vld_d = 0;
-        ifu_exu_ertn_vld_d = 1;
 
         @(posedge clk);
 
@@ -1122,18 +1122,26 @@ module top_tb;
         // Stop instruction stream
         init_inputs();
 
-        // Handle any pending LSU request to avoid hanging
-        if (lsu_biu_rd_req) begin
-            $display("Note: Cancelling pending LSU request due to ERTN flush");
-            // Simulate BIU acknowledging but data won't be used
-            @(posedge clk);
-            biu_lsu_rd_ack = 1;
-            @(posedge clk);
-            biu_lsu_rd_ack = 0;
-        end
+	//// response to LSU ld instruction
+        //if (lsu_biu_rd_req) begin
+        //    $display("Note: Cancelling pending LSU request due to ERTN flush");
+        //    // Simulate BIU acknowledging but data won't be used
+        //    @(posedge clk);
+        //    biu_lsu_rd_ack = 1;
+        //    @(posedge clk);
+        //    biu_lsu_rd_ack = 0;
+        //end
 
-        // Wait for pipeline to flush
-        wait_cycles(10);
+	//// Wait for several cycles to send data
+        //wait_cycles(5);
+
+	//biu_lsu_data_vld = 1;
+	//biu_lsu_data = 64'haaaa1234bbbb1234;
+
+        //wait_cycles(1);
+	//
+	//biu_lsu_data_vld = 0;
+	//biu_lsu_data = 64'h0;
 
         // Check results
         passed = 1;
@@ -1148,7 +1156,7 @@ module top_tb;
 
         // Check 2: Instruction before ERTN (ALU ADD) should complete
         wait_cycles(2);
-        if (rd_w === 20 && wen_w === 1 && rd_data_w === 32'h300) begin
+        if (u_dut.u_rf.regs[20] === 32'h300) begin
             $display("PASS: Pre-ERTN ALU instruction completed");
         end else begin
             $display("ERROR: Pre-ERTN instruction failed");
@@ -1199,7 +1207,7 @@ module top_tb;
 
         wait_cycles(4);
 
-        if (rd_w === 23 && wen_w === 1 && rd_data_w === 32'hFFFFFFEF) begin  // 0x77 - 0x88 = -0x11
+        if (u_dut.u_rf.regs[23] === 32'hFFFFFFEF) begin  // 0x77 - 0x88 = -0x11
             $display("PASS: Pipeline recovered, SUB instruction completed");
         end else begin
             $display("ERROR: Pipeline recovery failed: data=0x%h, expected 0xFFFFFFEF",
@@ -1220,6 +1228,268 @@ module top_tb;
     end
     endtask
     
+    // Task: JIRL Instruction Test (jirl $r1, $r6, 32)
+    task test_jirl_instruction;
+        integer passed;
+        reg [31:0] expected_target;
+        reg [31:0] expected_return_addr;
+    begin
+        current_test_name = "JIRL Instruction Test";
+        $display("\n=== Starting JIRL Instruction Test ===");
+
+        // Initialize
+        init_inputs();
+
+        // Setup JIRL instruction: jirl $r1, $r6, 32
+        // rs1 = 6 (base register), rd = 1 (destination for return address)
+        // offset = 32 (0x20)
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_3000;  // Current PC
+        ifu_exu_rs1_d = 6;             // $r6 (base register)
+        ifu_exu_rs2_d = 0;             // Not used
+        ifu_exu_rd_d = 1;              // $r1 (destination for return address)
+        ifu_exu_wen_d = 1;             // Write return address to $r1
+        ifu_exu_imm_shifted_d = 32'h20;  // Offset (32 decimal)
+
+        // Setup register value for $r6
+        u_dut.u_rf.regs[6] = 32'h4000_0000;  // Base address
+
+        // Calculate expected values
+        expected_target = 32'h4000_0020;      // $r6 + offset
+        expected_return_addr = 32'h1C00_3004; // PC + 4 (next instruction)
+
+        // BRU valid (assuming JIRL is handled by BRU)
+        ifu_exu_bru_vld_d = 1;
+        ifu_exu_bru_op_d = 4'b0101;
+        ifu_exu_bru_offset_d = 32'h20;
+
+        // Other functional units inactive
+        ifu_exu_alu_vld_d = 0;
+        ifu_exu_lsu_vld_d = 0;
+        ifu_exu_mul_vld_d = 0;
+        ifu_exu_csr_vld_d = 0;
+
+        // Wait for instruction to enter pipeline
+        @(posedge clk);
+
+        // Clear inputs for next cycle
+        ifu_exu_vld_d = 0;
+        ifu_exu_pc_d = 0;
+        ifu_exu_rs1_d = 0;
+        ifu_exu_rs2_d = 0;
+        ifu_exu_rd_d = 0;
+        ifu_exu_wen_d = 0;
+        ifu_exu_imm_shifted_d = 0;
+        ifu_exu_bru_vld_d = 0;
+        ifu_exu_bru_op_d = 0;
+        ifu_exu_bru_offset_d = 0;
+
+        // Wait for instruction to complete (go through pipeline stages)
+        wait_cycles(3);
+
+        // Check results
+        passed = 1;
+
+        $display("Checking JIRL instruction results...");
+
+        // Check 1: Branch signal should be asserted
+        if (exu_ifu_branch !== 1) begin
+            $display("ERROR: Branch signal not asserted for JIRL");
+            passed = 0;
+        end
+
+        // Check 2: Branch address should be $r6 + offset
+        if (exu_ifu_brn_addr !== expected_target) begin
+            $display("ERROR: Branch address 0x%h, expected 0x%h",
+                     exu_ifu_brn_addr, expected_target);
+            passed = 0;
+        end
+
+        // Check 3: Return address should be written to $r1
+
+        if (rd_w !== 1) begin
+            $display("ERROR: rd_w is %0d, expected 1", rd_w);
+            passed = 0;
+        end
+
+        if (wen_w !== 1) begin
+            $display("ERROR: wen_w is %0d, expected 1", wen_w);
+            passed = 0;
+        end
+
+        if (rd_data_w !== expected_return_addr) begin
+            $display("ERROR: Return address 0x%h, expected 0x%h",
+                     rd_data_w, expected_return_addr);
+            passed = 0;
+        end
+
+        // Check 4: PC in writeback stage should match instruction PC
+        if (pc_w !== 32'h1C00_3000) begin
+            $display("ERROR: pc_w is 0x%h, expected 0x1C00_3000", pc_w);
+            passed = 0;
+        end
+
+        // Check 5: No stall should occur for JIRL (non-load/store)
+        if (exu_ifu_stall !== 0) begin
+            $display("ERROR: Unexpected stall for JIRL instruction");
+            passed = 0;
+        end
+
+        // Check 6: No exception should occur
+        if (exu_ifu_except !== 0) begin
+            $display("ERROR: Unexpected exception for JIRL");
+            passed = 0;
+        end
+
+        // Check 7: No ERTN should occur
+        if (exu_ifu_ertn !== 0) begin
+            $display("ERROR: Unexpected ertn for JIRL");
+            passed = 0;
+        end
+
+        // Restore inputs
+        init_inputs();
+
+        // Print test result
+        print_test_result(passed);
+
+        $display("JIRL test completed:");
+        $display("  Jump target: 0x%h ($r6 + 0x20)", expected_target);
+        $display("  Return address saved to $r1: 0x%h", expected_return_addr);
+    end
+    endtask
+
+    // Task: JIRL with zero offset test
+    task test_jirl_zero_offset;
+        integer passed;
+    begin
+        current_test_name = "JIRL Zero Offset Test";
+        $display("\n=== Starting JIRL Zero Offset Test ===");
+
+        // Initialize
+        init_inputs();
+
+        // Setup JIRL instruction: jirl $r2, $r7, 0
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_4000;
+        ifu_exu_rs1_d = 7;             // $r7
+        ifu_exu_rd_d = 2;              // $r2
+        ifu_exu_wen_d = 1;
+        ifu_exu_imm_shifted_d = 0;     // Zero offset
+
+        u_dut.u_rf.regs[7] = 32'h5000_0000;  // Base address
+
+        // BRU valid
+        ifu_exu_bru_vld_d = 1;
+        ifu_exu_bru_op_d = 4'b0101;    // JIRL opcode
+        ifu_exu_bru_offset_d = 0;
+
+        @(posedge clk);
+        init_inputs();
+
+        // Wait for completion
+        wait_cycles(3);
+
+        // Check results
+        passed = 1;
+
+        // Check branch signal
+        if (exu_ifu_branch !== 1) begin
+            $display("ERROR: Branch signal not asserted");
+            passed = 0;
+        end
+
+        // Check branch address (should equal $r7)
+        if (exu_ifu_brn_addr !== 32'h5000_0000) begin
+            $display("ERROR: Branch address 0x%h, expected 0x5000_0000",
+                     exu_ifu_brn_addr);
+            passed = 0;
+        end
+
+        // Check return address
+        if (rd_data_w !== 32'h1C00_4004) begin
+            $display("ERROR: Return address 0x%h, expected 0x1C00_4004",
+                     rd_data_w);
+            passed = 0;
+        end
+
+        // Restore inputs
+        init_inputs();
+
+        // Print test result
+        print_test_result(passed);
+    end
+    endtask
+
+    // Task: JIRL with negative offset test
+    task test_jirl_negative_offset;
+        integer passed;
+        reg [31:0] expected_target;
+    begin
+        current_test_name = "JIRL Negative Offset Test";
+        $display("\n=== Starting JIRL Negative Offset Test ===");
+
+        // Initialize
+        init_inputs();
+
+        // Setup JIRL instruction: jirl $r3, $r8, -16
+        // Note: Offset is signed, -16 = 0xFFFFFFF0 in two's complement
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_5000;
+        ifu_exu_rs1_d = 8;             // $r8
+        ifu_exu_rd_d = 3;              // $r3
+        ifu_exu_wen_d = 1;
+        ifu_exu_imm_shifted_d = 32'hFFFFFFF0;  // -16
+
+        u_dut.u_rf.regs[8] = 32'h6000_0010;  // Base address
+
+        // Calculate expected target: 0x6000_0010 + (-16) = 0x6000_0000
+        expected_target = 32'h6000_0000;
+
+        // BRU valid
+        ifu_exu_bru_vld_d = 1;
+        ifu_exu_bru_op_d = 4'b0101;    // JIRL opcode
+        ifu_exu_bru_offset_d = 32'hFFFFFFF0;
+
+        @(posedge clk);
+        init_inputs();
+
+        // Wait for completion
+        wait_cycles(3);
+
+        // Check results
+        passed = 1;
+
+        // Check branch signal
+        if (exu_ifu_branch !== 1) begin
+            $display("ERROR: Branch signal not asserted");
+            passed = 0;
+        end
+
+        // Check branch address
+        if (exu_ifu_brn_addr !== expected_target) begin
+            $display("ERROR: Branch address 0x%h, expected 0x%h",
+                     exu_ifu_brn_addr, expected_target);
+            passed = 0;
+        end
+
+        // Check return address
+        if (rd_data_w !== 32'h1C00_5004) begin
+            $display("ERROR: Return address 0x%h, expected 0x1C00_5004",
+                     rd_data_w);
+            passed = 0;
+        end
+
+        // Restore inputs
+        init_inputs();
+
+        // Print test result
+        print_test_result(passed);
+
+        $display("Negative offset test: 0x6000_0010 + (-16) = 0x%h", expected_target);
+    end
+    endtask
+
     // Main test flow
     initial begin
         // Initialize
@@ -1236,16 +1506,22 @@ module top_tb;
         $display("Starting c7bexu Testbench");
         $display("========================================\n");
         
-//        // Run test cases
-//        test_ld_instruction();
-//        test_ld_instruction_ale();
-//        test_alu_add_instruction();
-//        test_bru_branch_instruction();
-//
-//	// Add ERTN flush tests
+        // Run test cases
+        test_ld_instruction();
+        test_ld_instruction_ale();
+        test_alu_add_instruction();
+        test_bru_branch_instruction();
+
+      
+	// Add ERTN flush tests
         test_ertn_flush_instruction();
-//        test_ertn_complex_flush();
+        test_ertn_complex_flush();
         
+        // Add JIRL tests
+        test_jirl_instruction();
+        test_jirl_zero_offset();
+        test_jirl_negative_offset();
+	
         // Add more test cases here...
         
         // Print test statistics
@@ -1263,8 +1539,8 @@ module top_tb;
     
     // Monitor key signal changes
     initial begin
-        $monitor("Time %0t: clk=%b, resetn=%b, stall=%b, pc_w=0x%h, wen_w=%d rd_w=%0d, rd_data_w=0x%h",
-                 $time, clk, resetn, exu_ifu_stall, pc_w, wen_w, rd_w, rd_data_w);
+        $monitor("Time %0t: clk=%b, resetn=%b, stall=%b, ertn=%b, pc_w=0x%h, wen_w=%d rd_w=%0d, rd_data_w=0x%h",
+                 $time, clk, resetn, exu_ifu_stall, exu_ifu_ertn, pc_w, wen_w, rd_w, rd_data_w);
     end
     
     // Waveform file generation
