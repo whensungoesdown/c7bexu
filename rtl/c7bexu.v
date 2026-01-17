@@ -446,9 +446,6 @@ module c7bexu (
       .lsu_wr_fin_ls3                  (lsu_wr_fin_ls3),
 
       .csr_vld_e                       (csr_vld_e)  // stall two cycles will be engough
-      //.bru_branch_e                    (bru_branch_e), // stall two cycles until branch_e propagate through _w
-      //.exc_vld_e                       (exc_vld_e), // stall two cycles
-      //.ertn_vld_e                      (ertn_vld_e) // stall two cycles
    );
 
 
@@ -456,14 +453,8 @@ module c7bexu (
    // Registers
    //
 
-   // Propagated to functional units only for valid instructions that raise no
-   // exceptions.
-   //wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) | flush;
-   //wire reg_en_d = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d);
-   wire reg_en_d = 1'b1;
-
-   //wire reg_en_m = ~stall | flush;
-   //wire reg_en_m = ~stall;
+   // Only LSU operations and common pipeline registers (pc, wen, rd, etc.)
+   // are affected by stalls. Other units continue execution normally.
    wire reg_en_m = ~stall_reg_mw;
    wire reg_en_e = ~stall_reg_mw;
 
@@ -471,28 +462,24 @@ module c7bexu (
    dff_ns #(1) exc_vld_e_reg (
       .din (ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
       .q   (exc_vld_e));
 
-   dffe_ns #(6) exc_code_e_reg (
+   dff_ns #(6) exc_code_e_reg (
       .din (ifu_exu_exc_code_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (exc_code_e));
    
    // When an exception occurs, instruction issue to the functional units is
    // halted. The exception code is then propagated down the pipeline and
    // resolved at the write-back (_w) stage following a pipeline drain.
-   dffe_ns #(1) exc_vld_m_reg (
+   dff_ns #(1) exc_vld_m_reg (
       .din (exc_vld_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (exc_vld_m));
 
-   dffe_ns #(6) exc_code_m_reg (
+   dff_ns #(6) exc_code_m_reg (
       .din (exc_code_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (exc_code_m));
 
    dff_ns #(1) exc_vld_w_reg (
@@ -507,11 +494,9 @@ module c7bexu (
 
 
    //
-   dffe_ns #(32) pc_e_reg (
+   dff_ns #(32) pc_e_reg (
       .din (ifu_exu_pc_d),
       .clk (clk),
-      .en  (reg_en_d),
-      //.en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .q   (pc_e));
 
    dffe_ns #(32) pc_m_reg (
@@ -526,36 +511,30 @@ module c7bexu (
       .en  (reg_en_m),
       .q   (pc_w));
 
-   dffe_ns #(5) rs1_e_reg (
+   dff_ns #(5) rs1_e_reg (
       .din (ifu_exu_rs1_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (rs1_e));
 
-   dffe_ns #(5) rs2_e_reg (
+   dff_ns #(5) rs2_e_reg (
       .din (ifu_exu_rs2_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (rs2_e));
 
-   dffe_ns #(32) rs1_data_e_reg (
+   dff_ns #(32) rs1_data_e_reg (
       .din (rs1_data_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (rs1_data_e));
 
-   dffe_ns #(32) rs2_data_e_reg (
+   dff_ns #(32) rs2_data_e_reg (
       .din (rs2_data_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (rs2_data_e));
 
    // no need reset, but looks nice
-   dffrle_ns #(5) rd_e_reg (
+   dffrl_ns #(5) rd_e_reg (
       .din (ifu_exu_rd_d),
       .clk (clk),
-      .en  (reg_en_d),
-      //.en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .rst_l (resetn),
       .q   (rd_e));
 
@@ -575,11 +554,9 @@ module c7bexu (
       .rst_l (resetn),
       .q   (rd_w));
 
-   dffrle_ns #(1) wen_e_reg (
+   dffrl_ns #(1) wen_e_reg (
       .din (ifu_exu_wen_d & ~flush),
       .clk (clk),
-      .en  (reg_en_d),
-      //.en (ifu_exu_vld_d & ~ifu_exu_exc_vld_d),
       .rst_l (resetn),
       .q   (wen_e));
 
@@ -597,10 +574,9 @@ module c7bexu (
       .rst_l (resetn),
       .q   (wen_w));
 
-   dffe_ns #(32) imm_shifted_e_reg (
+   dff_ns #(32) imm_shifted_e_reg (
       .din (ifu_exu_imm_shifted_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (imm_shifted_e));
 
    dffe_ns #(32) rd_data_w_reg (
@@ -613,61 +589,41 @@ module c7bexu (
    dff_ns #(1) alu_vld_e_reg (
       .din (ifu_exu_alu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
       .q   (alu_vld_e));
 
-   dffe_ns #(1) alu_vld_m_reg (
+   dff_ns #(1) alu_vld_m_reg (
       .din (alu_vld_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (alu_vld_m));
 
-//   dffe_ns #(32) alu_a_e_reg (
-//      .din (alu_a_d),
-//      .clk (clk),
-//      .en  (reg_en_d),
-//      .q   (alu_a_e));
-//
-//   dffe_ns #(32) alu_b_e_reg (
-//      .din (alu_b_d),
-//      .clk (clk),
-//      .en  (reg_en_d),
-//      .q   (alu_b_e));
-
-   dffe_ns #(6) alu_op_e_reg (
+   dff_ns #(6) alu_op_e_reg (
       .din (ifu_exu_alu_op_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (alu_op_e));
 
-   dffe_ns #(1) alu_a_pc_e_reg (
+   dff_ns #(1) alu_a_pc_e_reg (
       .din (ifu_exu_alu_a_pc_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (alu_a_pc_e));
 
-   dffe_ns #(32) alu_c_e_reg (
+   dff_ns #(32) alu_c_e_reg (
       .din (ifu_exu_alu_c_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (alu_c_e));
 
-   dffe_ns #(1) alu_double_word_e_reg (
+   dff_ns #(1) alu_double_word_e_reg (
       .din (ifu_exu_alu_double_word_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (alu_double_word_e));
 
-   dffe_ns #(1) alu_b_imm_e_reg (
+   dff_ns #(1) alu_b_imm_e_reg (
       .din (ifu_exu_alu_b_imm_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (alu_b_imm_e));
 
-   dffe_ns #(32) alu_res_m_reg (
+   dff_ns #(32) alu_res_m_reg (
       .din (alu_res_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (alu_res_m));
 
 
@@ -675,26 +631,17 @@ module c7bexu (
    dffrl_ns #(1) lsu_vld_e_reg (
       .din (ifu_exu_lsu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
       .rst_l (resetn),
       .q   (lsu_vld_e));
 
-   //dffrl_ns #(1) lsu_vld_m_reg (
-   //   .din (lsu_vld_e),
-   //   .clk (clk),
-   //   .rst_l (resetn),
-   //   .q   (lsu_vld_m));
-
-   dffe_ns #(7) lsu_op_e_reg (
+   dff_ns #(7) lsu_op_e_reg (
       .din (ifu_exu_lsu_op_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (lsu_op_e));
 
-   dffe_ns #(1) lsu_double_read_e_reg (
+   dff_ns #(1) lsu_double_read_e_reg (
       .din (ifu_exu_lsu_double_read_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (lsu_double_read_e));
 
    // m equvalent to ls1, for lsu instructions that raise ale, lsu will not stall 
@@ -707,188 +654,160 @@ module c7bexu (
    dff_ns #(32) lsu_except_badv_w_reg (
       .din (lsu_except_badv_ls1),
       .clk (clk),
-      //.en  (reg_en_m),
       .q   (lsu_except_badv_w));
 
    // bru
    dff_ns #(1) bru_vld_e_reg (
       .din (ifu_exu_bru_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
       .q   (bru_vld_e));
 
-   dffe_ns #(1) bru_vld_m_reg (
+   dff_ns #(1) bru_vld_m_reg (
       .din (bru_vld_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (bru_vld_m));
 
-   dffe_ns #(4) bru_op_e_reg (
+   dff_ns #(4) bru_op_e_reg (
       .din (ifu_exu_bru_op_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (bru_op_e));
 
-   dffe_ns #(32) bru_offset_e_reg (
+   dff_ns #(32) bru_offset_e_reg (
       .din (ifu_exu_bru_offset_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (bru_offset_e));
 
-   dffe_ns #(32) bru_link_pc_m_reg (
+   dff_ns #(32) bru_link_pc_m_reg (
       .din (bru_link_pc_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (bru_link_pc_m));
 
-   dffe_ns #(1) bru_branch_m_reg (
+   dff_ns #(1) bru_branch_m_reg (
       .din (bru_branch_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (bru_branch_m));
 
-   dffe_ns #(1) bru_branch_w_reg (
+   dff_ns #(1) bru_branch_w_reg (
       .din (bru_branch_m),
       .clk (clk),
-      .en  (reg_en_m),
       .q   (bru_branch_w));
 
-   dffe_ns #(32) bru_brn_addr_m_reg (
+   dff_ns #(32) bru_brn_addr_m_reg (
       .din (bru_brn_addr_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (bru_brn_addr_m));
 
-   dffe_ns #(32) bru_brn_addr_w_reg (
+   dff_ns #(32) bru_brn_addr_w_reg (
       .din (bru_brn_addr_m),
       .clk (clk),
-      .en  (reg_en_m),
       .q   (bru_brn_addr_w));
 
    // mul
    dff_ns #(1) mul_vld_e_reg (
       .din (ifu_exu_mul_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
       .q   (mul_vld_e));
 
-   dffe_ns #(1) mul_vld_m_reg (
+   dff_ns #(1) mul_vld_m_reg (
       .din (mul_vld_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (mul_vld_m));
 
-   dffe_ns #(1) mul_signed_e_reg (
+   dff_ns #(1) mul_signed_e_reg (
       .din (ifu_exu_mul_signed_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (mul_signed_e));
 
-   dffe_ns #(1) mul_double_e_reg (
+   dff_ns #(1) mul_double_e_reg (
       .din (ifu_exu_mul_double_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (mul_double_e));
 
-   dffe_ns #(1) mul_hi_e_reg (
+   dff_ns #(1) mul_hi_e_reg (
       .din (ifu_exu_mul_hi_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (mul_hi_e));
 
    dffe_ns #(1) mul_short_e_reg (
       .din (ifu_exu_mul_short_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (mul_short_e));
 
    // csr
+   //
+   // CSR register updates are not affected by CSR stalls.
+   // CSR stalls only block IFU for 2 cycles to prevent instruction fetch.
    dffrl_ns #(1) csr_vld_e_reg (
       .din (ifu_exu_csr_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
       .rst_l (resetn),
       .q   (csr_vld_e));
 
-   dffrle_ns #(1) csr_vld_m_reg (
+   dffrl_ns #(1) csr_vld_m_reg (
       .din (csr_vld_e),
       .clk (clk),
-      .en  (reg_en_e),
       .rst_l (resetn),
       .q   (csr_vld_m));
 
-   dffe_ns #(32) csr_rdata_e_reg (
+   dff_ns #(32) csr_rdata_e_reg (
       .din (csr_rdata_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (csr_rdata_e));
 
-   dffe_ns #(32) csr_rdata_m_reg (
+   dff_ns #(32) csr_rdata_m_reg (
       .din (csr_rdata_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (csr_rdata_m));
 
-   dffe_ns #(1) csr_xchg_e_reg (
+   dff_ns #(1) csr_xchg_e_reg (
       .din (ifu_exu_csr_xchg_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (csr_xchg_e));
 
-   dffe_ns #(1) csr_wen_e_reg (
+   dff_ns #(1) csr_wen_e_reg (
       .din (ifu_exu_csr_wen_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (csr_wen_e));
 
-   // csr_wen_m should not be stalled
    dff_ns #(1) csr_wen_m_reg (
       .din (csr_wen_e),
       .clk (clk),
-      //.en  (reg_en_e),
       .q   (csr_wen_m));
 
-   dffe_ns #(14) csr_waddr_e_reg (
+   dff_ns #(14) csr_waddr_e_reg (
       .din (ifu_exu_csr_waddr_d),
       .clk (clk),
-      .en  (reg_en_d),
       .q   (csr_waddr_e));
 
-   dffe_ns #(14) csr_waddr_m_reg (
+   dff_ns #(14) csr_waddr_m_reg (
       .din (csr_waddr_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (csr_waddr_m));
 
-   dffe_ns #(32) csr_wdata_m_reg (
+   dff_ns #(32) csr_wdata_m_reg (
       .din (csr_wdata_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (csr_wdata_m));
 
-   dffe_ns #(32) csr_mask_m_reg (
+   dff_ns #(32) csr_mask_m_reg (
       .din (csr_mask_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (csr_mask_m));
 
    // ertn
    dff_ns #(1) ertn_vld_e_reg (
       .din (ifu_exu_ertn_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
-      //.en  (reg_en_d),
       .q   (ertn_vld_e));
 
-   dffe_ns #(1) ertn_vld_m_reg (
+   dff_ns #(1) ertn_vld_m_reg (
       .din (ertn_vld_e),
       .clk (clk),
-      .en  (reg_en_e),
       .q   (ertn_vld_m));
 
-   dffe_ns #(1) ertn_vld_w_reg (
+   dff_ns #(1) ertn_vld_w_reg (
       .din (ertn_vld_m),
       .clk (clk),
-      .en  (reg_en_m),
       .q   (ertn_vld_w));
 
 endmodule
