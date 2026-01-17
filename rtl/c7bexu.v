@@ -550,7 +550,7 @@ module c7bexu (
       .q   (rd_w));
 
    dffrl_ns #(1) wen_e_reg (
-      .din (ifu_exu_wen_d & ~flush),
+      .din (ifu_exu_wen_d & ifu_exu_vld_d & ~flush),
       .clk (clk),
       .rst_l (resetn),
       .q   (wen_e));
