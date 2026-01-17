@@ -23,7 +23,7 @@ module c7bexu (
    // alu
    input              ifu_exu_alu_vld_d,
    input  [5:0]       ifu_exu_alu_op_d, // ALU_CODE_BIT 6
-   input              ifu_exu_alu_a_pc_d, // to do: in IFU
+   input              ifu_exu_alu_a_pc_d,
    input  [31:0]      ifu_exu_alu_c_d,
    input              ifu_exu_alu_double_word_d,
    input              ifu_exu_alu_b_imm_d,
@@ -32,7 +32,6 @@ module c7bexu (
    input              ifu_exu_lsu_vld_d,
    input  [6:0]       ifu_exu_lsu_op_d, // LSU_CODE_BIT 7
    input              ifu_exu_lsu_double_read_d,
-   //input  [31:0]      ifu_exu_lsu_imm_shifted_d,
 
    // bru
    input              ifu_exu_bru_vld_d,
@@ -165,10 +164,6 @@ module c7bexu (
       .rs1_data_byp_e                  (rs1_data_byp_e),
       .rs2_data_byp_e                  (rs2_data_byp_e)
    );
-
-   // alu
-   //wire [31:0] alu_a_d = ifu_exu_alu_a_pc_d ? ifu_exu_pc_d : rs1_data_d;
-   //wire [31:0] alu_b_d = ifu_exu_alu_b_imm_d? ifu_exu_imm_shifted_d : rs2_data_d;
 
    wire        alu_vld_e;
    wire        alu_vld_m;
