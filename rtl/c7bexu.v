@@ -723,7 +723,7 @@ module c7bexu (
       .clk (clk),
       .q   (mul_hi_e));
 
-   dffe_ns #(1) mul_short_e_reg (
+   dff_ns #(1) mul_short_e_reg (
       .din (ifu_exu_mul_short_d),
       .clk (clk),
       .q   (mul_short_e));
