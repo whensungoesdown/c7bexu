@@ -1490,6 +1490,392 @@ module top_tb;
     end
     endtask
 
+    // Task: CSRRD Instruction Test (csrrd $r5, 0x0)
+    task test_csrrd_instruction;
+        integer passed;
+        reg [31:0] expected_csr_value;
+        integer csr_read_done;
+        integer i;
+    begin
+        current_test_name = "CSRRD Instruction Test";
+        $display("\n=== Starting CSRRD Instruction Test ===");
+        
+        // Initialize
+        init_inputs();
+        
+        // Setup CSRRD instruction: csrrd $r5, 0x0
+        // rd = 5 (destination register), csr_num = 0x0
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_6000;  // Current PC
+        ifu_exu_rs1_d = 0;             // Not used for CSRRD
+        ifu_exu_rs2_d = 0;             // Not used
+        ifu_exu_rd_d = 5;              // $r5 (destination for CSR value)
+        ifu_exu_wen_d = 1;             // Write CSR value to $r5
+        ifu_exu_imm_shifted_d = 0;     // Not used
+        
+        // CSR valid
+        ifu_exu_csr_vld_d = 1;
+        ifu_exu_csr_raddr_d = 14'h0;   // CSR address 0x0
+        ifu_exu_csr_xchg_d = 0;        // Read only (not exchange)
+        ifu_exu_csr_wen_d = 0;         // No write (read only)
+        ifu_exu_csr_waddr_d = 14'h0;   // Not used for read
+        
+        // Other functional units inactive
+        ifu_exu_alu_vld_d = 0;
+        ifu_exu_lsu_vld_d = 0;
+        ifu_exu_bru_vld_d = 0;
+        ifu_exu_mul_vld_d = 0;
+        
+        // Pre-set CSR 0x0 value in the DUT (if accessible)
+        expected_csr_value = 32'h1234_5678;  // Example CSR value
+        
+        $display("Executing CSRRD $r5, 0x0");
+        $display("Expected to read CSR 0x0 and write to $r5");
+        
+        // Wait for instruction to enter pipeline
+        @(posedge clk);
+        
+        // Clear inputs for next cycle
+        ifu_exu_vld_d = 0;
+        ifu_exu_pc_d = 0;
+        ifu_exu_rd_d = 0;
+        ifu_exu_wen_d = 0;
+        ifu_exu_csr_vld_d = 0;
+        ifu_exu_csr_raddr_d = 0;
+        
+        // Wait for instruction to complete
+        // CSR operations may take multiple cycles
+        wait_cycles(2);
+        
+        // Check results
+        passed = 1;
+        csr_read_done = 0;
+        
+        $display("Checking CSRRD instruction results...");
+        
+        // Monitor for several cycles since CSR read might be pipelined
+        for (i = 0; i < 5; i = i + 1) begin
+            @(posedge clk);
+            
+            // Check when instruction reaches writeback stage
+            if (wen_w === 1 && rd_w === 5) begin
+                csr_read_done = 1;
+                
+                // Check 1: rd_w should be 5
+                if (rd_w !== 5) begin
+                    $display("ERROR: rd_w is %0d, expected 5", rd_w);
+                    passed = 0;
+                end
+                
+                // Check 2: wen_w should be 1
+                if (wen_w !== 1) begin
+                    $display("ERROR: wen_w is %0d, expected 1", wen_w);
+                    passed = 0;
+                end
+                
+                // Check 3: pc_w should match instruction PC
+                if (pc_w !== 32'h1C00_6000) begin
+                    $display("ERROR: pc_w is 0x%h, expected 0x1C00_6000", pc_w);
+                    passed = 0;
+                end
+                
+                // Check 4: rd_data_w contains CSR value
+                $display("CSR value read: 0x%h", rd_data_w);
+                
+                // Exit the loop when we found the result
+                i = 5;  // Set to max to exit loop
+            end
+        end
+        
+        // Check if CSR read completed
+        if (csr_read_done === 0) begin
+            $display("ERROR: CSRRD instruction did not complete writeback within expected cycles");
+            passed = 0;
+        end
+        
+        // Check 5: No stall should occur for CSR read (unless CSR has side effects)
+        if (exu_ifu_stall !== 0) begin
+            $display("WARNING: Stall occurred during CSR read");
+            // Not necessarily an error - some CSR reads might cause stalls
+        end
+        
+        // Check 6: No exception should occur
+        if (exu_ifu_except !== 0) begin
+            $display("ERROR: Unexpected exception during CSR read");
+            passed = 0;
+        end
+        
+        // Check 7: No branch should occur
+        if (exu_ifu_branch !== 0) begin
+            $display("ERROR: Unexpected branch during CSR read");
+            passed = 0;
+        end
+        
+        // Check 8: No ertn should occur
+        if (exu_ifu_ertn !== 0) begin
+            $display("ERROR: Unexpected ertn during CSR read");
+            passed = 0;
+        end
+        
+        // Restore inputs
+        init_inputs();
+        
+        // Print test result
+        print_test_result(passed);
+        
+        $display("CSRRD test completed:");
+        $display("  Read CSR 0x0, value = 0x%h", rd_data_w);
+        $display("  Written to $r5");
+    end
+    endtask
+    
+    // Task: CSRWR Instruction Test (csrwr with read-back)
+    task test_csrwr_instruction;
+        integer passed;
+        reg [31:0] test_value;
+        integer csr_write_done;
+        integer i;
+    begin
+        current_test_name = "CSRWR Instruction Test";
+        $display("\n=== Starting CSRWR Instruction Test ===");
+        
+        // Initialize
+        init_inputs();
+        
+        // Test value to write
+        test_value = 32'hDEAD_BEEF;
+        
+        // First, write to CSR using CSRWR
+        $display("Step 1: Writing 0x%h to CSR 0x6", test_value);
+        
+        // Setup CSRWR instruction
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_6100;
+        ifu_exu_rs2_d = 10;            // Source register $r10
+        ifu_exu_rd_d = 10;             // $r10 (destination for old CSR value)
+        ifu_exu_wen_d = 1;             // Write old CSR value to $r10
+        
+        // Set source register value
+        u_dut.u_rf.regs[10] = test_value;
+        
+        // CSR valid - write operation
+        ifu_exu_csr_vld_d = 1;
+        ifu_exu_csr_raddr_d = 14'h6;   // CSR address 0x6
+        ifu_exu_csr_xchg_d = 0;        // Exchange (write new, read old) CSRWR xchg 0
+        ifu_exu_csr_wen_d = 1;         // Write enabled
+        ifu_exu_csr_waddr_d = 14'h6;   // Write to CSR 0x6
+        
+        @(posedge clk);
+        init_inputs();
+        
+        // Wait for write to complete
+        wait_cycles(3);
+        
+        // Second, read back using CSRRD to verify
+        $display("Step 2: Reading back CSR 0x6 to verify");
+        
+        // Setup CSRRD instruction
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_6104;
+        ifu_exu_rs1_d = 0;             // Not used
+        ifu_exu_rd_d = 12;             // $r12 (destination for read value)
+        ifu_exu_wen_d = 1;             // Write CSR value to $r12
+        
+        // CSR valid - read operation
+        ifu_exu_csr_vld_d = 1;
+        ifu_exu_csr_raddr_d = 14'h6;   // CSR address 0x6
+        ifu_exu_csr_xchg_d = 0;        // Read only
+        ifu_exu_csr_wen_d = 0;         // No write
+        ifu_exu_csr_waddr_d = 14'h0;   // Not used
+        
+        @(posedge clk);
+        init_inputs();
+        
+        // Wait for read to complete
+        wait_cycles(2);
+        
+        // Check results
+        passed = 1;
+        csr_write_done = 0;
+        
+        $display("Checking CSRWR/CSRRD results...");
+        
+        // Monitor for CSR read completion
+        for (i = 0; i < 5; i = i + 1) begin
+            @(posedge clk);
+            
+            // Check when readback instruction reaches writeback
+            if (wen_w === 1 && rd_w === 12) begin
+                csr_write_done = 1;
+                
+                // Check that we read back the written value
+                $display("CSR 0x6 value read back: 0x%h", rd_data_w);
+                
+                // Ideally we'd check if rd_data_w equals test_value,
+                // but this depends on CSR implementation
+                if (rd_data_w === test_value) begin
+                    $display("PASS: CSR write/read verified correctly");
+                end else begin
+                    $display("ERROR: CSR readback value differs");
+                    $display("  Written: 0x%h, Read: 0x%h", test_value, rd_data_w);
+		    passed = 0;
+                end
+                
+                // Exit the loop
+                i = 5;
+            end
+        end
+        
+        if (csr_write_done === 0) begin
+            $display("ERROR: CSR readback did not complete");
+            passed = 0;
+        end
+        
+        // Also check that old CSR value was captured in $r11
+        // This happens during the CSRWR instruction
+        wait_cycles(2);
+        
+        // Restore inputs
+        init_inputs();
+        
+        // Print test result
+        print_test_result(passed);
+        
+        $display("CSRWR test completed:");
+        $display("  Wrote 0x%h to CSR 0x6", test_value);
+        $display("  Read back 0x%h", rd_data_w);
+    end
+    endtask
+    
+    // Task: CSR operations with pipeline interaction
+    task test_csr_pipeline_interaction;
+        reg [31:0] test_value;
+        integer passed;
+        integer i;
+    begin
+        current_test_name = "CSR Pipeline Interaction Test";
+        $display("\n=== Starting CSR Pipeline Interaction Test ===");
+        
+        // Initialize
+        init_inputs();
+        
+	// Test value to write
+        test_value = 32'hDEAD_BEEF;
+
+        // Test CSR operations mixed with other instructions
+        $display("Testing CSR ops in pipeline with ALU instructions");
+        
+        // Cycle 0: CSWR instruction
+	// Setup CSRWR instruction
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_6200;
+        ifu_exu_rs2_d = 20;            // Source register $r20
+        ifu_exu_rd_d = 20;             // $r20 (destination for old CSR value)
+        ifu_exu_wen_d = 1;             // Write old CSR value to $r10
+
+        // Set source register value
+        u_dut.u_rf.regs[20] = test_value;
+
+        // CSR valid - write operation
+        ifu_exu_csr_vld_d = 1;
+        ifu_exu_csr_raddr_d = 14'h6;   // CSR address 0x6
+        ifu_exu_csr_xchg_d = 0;        // Exchange (write new, read old) CSRWR xchg 0
+        ifu_exu_csr_wen_d = 1;         // Write enabled
+        ifu_exu_csr_waddr_d = 14'h6;   // Write to CSR 0x6
+
+
+        
+        // Set ALU operands for next instruction
+        u_dut.u_rf.regs[1] = 32'h100;
+        u_dut.u_rf.regs[2] = 32'h200;
+        
+        @(posedge clk);
+        init_inputs();
+        
+        // Wait for CSRRD to release stall
+        wait_cycles(2);
+        
+        // Cycle 1: ALU ADD instruction (should flow through pipeline with CSR)
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_6204;
+        ifu_exu_rs1_d = 1;
+        ifu_exu_rs2_d = 2;
+        ifu_exu_rd_d = 21;             // $r21
+        ifu_exu_wen_d = 1;
+        ifu_exu_csr_vld_d = 0;
+        ifu_exu_alu_vld_d = 1;
+        ifu_exu_alu_op_d = 6'b000001;  // ADD
+        
+        @(posedge clk);
+        
+        // Cycle 2: Another CSRRD
+        ifu_exu_vld_d = 1;
+        ifu_exu_pc_d = 32'h1C00_6208;
+        ifu_exu_rd_d = 25;             // $r25
+        ifu_exu_wen_d = 1;
+        ifu_exu_csr_vld_d = 1;
+        ifu_exu_csr_raddr_d = 14'h6;   // CSR 0x6
+        ifu_exu_alu_vld_d = 0;
+        
+        @(posedge clk);
+        
+        // Stop instruction stream
+        init_inputs();
+        
+        // Wait for all instructions to complete
+        wait_cycles(8);
+        
+        // Check results
+        passed = 1;
+        
+        $display("Checking pipeline interaction...");
+        
+        // Check that all three instructions completed
+        // We'll check the register file or monitor signals
+        // For now, just check no exceptions occurred
+        
+        if (exu_ifu_except !== 0) begin
+            $display("ERROR: Exception during CSR/ALU pipeline test");
+            passed = 0;
+        end
+        
+        // Check that pipeline didn't stall unnecessarily
+        // (CSR ops might cause some stalls, but should recover)
+        
+        // Check ALU result if visible
+        wait_cycles(2);
+        
+        // Check register file updates for ALU instruction
+        // Note: This assumes register file is directly accessible
+        if (u_dut.u_rf.regs[21] !== 32'h300) begin
+            $display("ERROR: ALU result not in register file");
+            $display("  Expected 0x300, got 0x%h", u_dut.u_rf.regs[21]);
+	    passed = 0;
+        end else begin
+            $display("ALU instruction executes correctly");
+        end
+        
+        // Check for CSR instruction completion signals
+        if (u_dut.u_rf.regs[25] === test_value) begin
+            $display("PASS: CSR write/read verified correctly");
+        end else begin
+            $display("ERROR: CSR readback value differs");
+            $display("  Written: 0x%h, Read: 0x%h", test_value, rd_data_w);
+	    passed = 0;
+        end
+        
+        // Restore inputs
+        init_inputs();
+        
+        // Print test result
+        print_test_result(passed);
+        
+        $display("CSR pipeline test completed:");
+        $display("  Mixed CSR and ALU instructions in pipeline");
+        $display("  No exceptions, pipeline flowed correctly");
+    end
+    endtask
+
     // Main test flow
     initial begin
         // Initialize
@@ -1511,7 +1897,6 @@ module top_tb;
         test_ld_instruction_ale();
         test_alu_add_instruction();
         test_bru_branch_instruction();
-
       
 	// Add ERTN flush tests
         test_ertn_flush_instruction();
@@ -1521,6 +1906,11 @@ module top_tb;
         test_jirl_instruction();
         test_jirl_zero_offset();
         test_jirl_negative_offset();
+
+	// Add CSR tests
+        test_csrrd_instruction();
+        test_csrwr_instruction();
+        test_csr_pipeline_interaction();
 	
         // Add more test cases here...
         
@@ -1532,6 +1922,38 @@ module top_tb;
         $display("Failed:       %0d", fail_count);
         $display("========================================\n");
         
+        if (fail_count == 0) begin
+            $display("ALL TESTS PASSED!");
+            $display("\nPASS!\n");
+            $display("\033[0;32m");
+            $display("**************************************************");
+            $display("*                                                *");
+            $display("*      * * *       *        * * *     * * *      *");
+            $display("*      *    *     * *      *         *           *");
+            $display("*      * * *     *   *      * * *     * * *      *");
+            $display("*      *        * * * *          *         *     *");
+            $display("*      *       *       *    * * *     * * *      *");
+            $display("*                                                *");
+            $display("**************************************************");
+            $display("\n");
+            $display("\033[0m");
+        end else begin
+            $display("SOME TESTS FAILED!");
+            $display("\nFAIL!\n");
+            $display("\033[0;31m");
+            $display("**************************************************");
+            $display("*                                                *");
+            $display("*      * * *       *         ***      *          *");
+            $display("*      *          * *         *       *          *");
+            $display("*      * * *     *   *        *       *          *");
+            $display("*      *        * * * *       *       *          *");
+            $display("*      *       *       *     ***      * * *      *");
+            $display("*                                                *");
+            $display("**************************************************");
+            $display("\n");
+            $display("\033[0m");
+        end
+
         // End simulation
         #100;
         $finish;

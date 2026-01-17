@@ -123,3 +123,22 @@ add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_align_mode_ls1
 add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_align_mode_ls2
 add wave -position end  result:/top_tb/u_dut/u_lsu/lsu_align_mode_ls3
 add wave -divider
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_eentry
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_era
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_mask
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_raddr
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_rdata
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_waddr
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_wdata
+add wave -position end  result:/top_tb/u_dut/u_csr/csr_wen
+add wave -divider
+add wave -position end  result:/top_tb/u_dut/csr_wen_e
+add wave -position end  result:/top_tb/u_dut/csr_wen_m
+add wave -position end  result:/top_tb/u_dut/csr_mask_e
+add wave -position end  result:/top_tb/u_dut/csr_mask_m
+add wave -position end  result:/top_tb/u_dut/csr_wdata_e
+add wave -position end  result:/top_tb/u_dut/csr_wdata_m
+add wave -position end  result:/top_tb/u_dut/csr_xchg_d
+add wave -position end  result:/top_tb/u_dut/csr_xchg_e
+add wave -position end  result:/top_tb/u_dut/csr_mask_e
+add wave -divider

@@ -841,10 +841,11 @@ module c7bexu (
       .en  (reg_en_d),
       .q   (csr_wen_e));
 
-   dffe_ns #(1) csr_wen_m_reg (
+   // csr_wen_m should not be stalled
+   dff_ns #(1) csr_wen_m_reg (
       .din (csr_wen_e),
       .clk (clk),
-      .en  (reg_en_e),
+      //.en  (reg_en_e),
       .q   (csr_wen_m));
 
    dffe_ns #(14) csr_waddr_e_reg (

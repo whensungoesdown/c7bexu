@@ -2,13 +2,18 @@
 echo run tests
 echo
 
+
 cd test0_byp
 echo "test0_byp"
-if ./simulate.sh | grep PASS; then
-	printf ""
+result=$(./simulate.sh)
+if echo "$result" | grep "PASS"; then
+    printf "PASS!\n"
+elif echo "$result" | grep "FAIL"; then
+    printf "FAIL!\n"
+    exit 1
 else
-	printf "Fail!\n"
-	exit
+    printf "Unknown result\n"
+    exit 1
 fi
 echo ""
 cd ..
@@ -16,11 +21,15 @@ cd ..
 
 cd test1_ecl
 echo "test1_ecl"
-if ./simulate.sh | grep PASS; then
-	printf ""
+result=$(./simulate.sh)
+if echo "$result" | grep "PASS"; then
+    printf "PASS!\n"
+elif echo "$result" | grep "FAIL"; then
+    printf "FAIL!\n"
+    exit 1
 else
-	printf "Fail!\n"
-	exit
+    printf "Unknown result\n"
+    exit 1
 fi
 echo ""
 cd ..
@@ -28,11 +37,16 @@ cd ..
 
 cd test2_exu
 echo "test2_exu"
-if ./simulate.sh | grep PASS; then
-	printf ""
+result=$(./simulate.sh)
+if echo "$result" | grep "PASS"; then
+    printf "PASS!\n"
+elif echo "$result" | grep "FAIL"; then
+    printf "FAIL!\n"
+    exit 1
 else
-	printf "Fail!\n"
-	exit
+    printf "Unknown result\n"
+    exit 1
 fi
 echo ""
 cd ..
+

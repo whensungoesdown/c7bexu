@@ -111,7 +111,10 @@ module c7bexu_ecl (
 
    //assign stall = lsu_stall | csr_stall | bru_stall | exc_stall | ertn_stall;
 
+   // CSR instructions stall IFU for 2 cycles only,
+   // but complete execution within the main pipeline.
    assign stall_ifu = lsu_stall_ifu | csr_stall_ifu;
-   assign stall_reg_mw = lsu_stall_reg_mw | csr_stall_reg_mw;
+   //assign stall_reg_mw = lsu_stall_reg_mw | csr_stall_reg_mw;
+   assign stall_reg_mw = lsu_stall_reg_mw;
 
 endmodule
