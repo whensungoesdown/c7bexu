@@ -29,6 +29,45 @@ module c7bexu_rf(
   // registers (r0 excluded)
 	reg [31:0] regs [31:0];
 
+    wire [31:0] r0, r1, r2, r3, r4, r5, r6, r7;
+    wire [31:0] r8, r9, r10, r11, r12, r13, r14, r15;
+    wire [31:0] r16, r17, r18, r19, r20, r21, r22, r23;
+    wire [31:0] r24, r25, r26, r27, r28, r29, r30, r31;
+
+    // for debug purposes
+    assign r0 = regs[0];
+    assign r1 = regs[1];
+    assign r2 = regs[2];
+    assign r3 = regs[3];
+    assign r4 = regs[4];
+    assign r5 = regs[5];
+    assign r6 = regs[6];
+    assign r7 = regs[7];
+    assign r8 = regs[8];
+    assign r9 = regs[9];
+    assign r10 = regs[10];
+    assign r11 = regs[11];
+    assign r12 = regs[12];
+    assign r13 = regs[13];
+    assign r14 = regs[14];
+    assign r15 = regs[15];
+    assign r16 = regs[16];
+    assign r17 = regs[17];
+    assign r18 = regs[18];
+    assign r19 = regs[19];
+    assign r20 = regs[20];
+    assign r21 = regs[21];
+    assign r22 = regs[22];
+    assign r23 = regs[23];
+    assign r24 = regs[24];
+    assign r25 = regs[25];
+    assign r26 = regs[26];
+    assign r27 = regs[27];
+    assign r28 = regs[28];
+    assign r29 = regs[29];
+    assign r30 = regs[30];
+    assign r31 = regs[31];
+
   // read after write (RAW)
   	wire r1_1_w1_raw =	wen1 && (raddr0_0 == waddr1);	
 	wire r1_2_w1_raw =  wen1 && (raddr0_1 == waddr1);
