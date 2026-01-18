@@ -305,7 +305,7 @@ module c7bexu (
    assign mul_b_e = rs2_data_byp_e;
    assign mul_a_64_e = {32'b0, mul_a_e};
    assign mul_b_64_e = {32'b0, mul_b_e};
-   assign mul_res_m = mul_res_m[31:0];
+   assign mul_res_m = mul_res_64_m[31:0];
 
    mul64x64 u_mul(
       .clk                             (clk),
