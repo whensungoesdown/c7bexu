@@ -265,8 +265,10 @@ module c7bexu (
    wire [31:0] bru_link_pc_e;
    wire [31:0] bru_link_pc_m;
 
-   assign bru_a_e = rs1_data_e;
-   assign bru_b_e = rs2_data_e;
+   //assign bru_a_e = rs1_data_e;
+   //assign bru_b_e = rs2_data_e;
+   assign bru_a_e = rs1_data_byp_e;
+   assign bru_b_e = rs2_data_byp_e;
    assign bru_pc_e = pc_e;
 
    branch u_bru(
@@ -297,8 +299,10 @@ module c7bexu (
    wire mul_hi_e;
    wire mul_short_e;
 
-   assign mul_a_e = rs1_data_e;
-   assign mul_b_e = rs2_data_e;
+   //assign mul_a_e = rs1_data_e;
+   //assign mul_b_e = rs2_data_e;
+   assign mul_a_e = rs1_data_byp_e;
+   assign mul_b_e = rs2_data_byp_e;
    assign mul_a_64_e = {32'b0, mul_a_e};
    assign mul_b_64_e = {32'b0, mul_b_e};
    assign mul_res_m = mul_res_m[31:0];
