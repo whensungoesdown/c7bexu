@@ -206,6 +206,7 @@ module c7bexu (
    wire lsu_except_ale_ls1;
    wire lsu_except_ale_m;
    wire [31:0] lsu_except_badv_ls1;
+   wire [31:0] lsu_except_badv_m;
    wire [31:0] lsu_except_badv_w;
    wire lsu_except_buserr_ls3;
    wire lsu_except_ecc_ls3;
@@ -650,8 +651,13 @@ module c7bexu (
       //.en  (reg_en_m), // ale should not affected by alu stall itself 
       .q   (lsu_except_ale_m));
 
-   dff_ns #(32) lsu_except_badv_w_reg (
+   dff_ns #(32) lsu_except_badv_m_reg (
       .din (lsu_except_badv_ls1),
+      .clk (clk),
+      .q   (lsu_except_badv_m));
+
+   dff_ns #(32) lsu_except_badv_w_reg (
+      .din (lsu_except_badv_m),
       .clk (clk),
       .q   (lsu_except_badv_w));
 
