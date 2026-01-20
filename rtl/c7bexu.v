@@ -4,6 +4,8 @@ module c7bexu (
    input              clk,
    input              resetn,
 
+   input              ext_intr,
+
    output             exu_ifu_except,
    output [31:0]      exu_ifu_isr_addr,
    output             exu_ifu_branch,
@@ -75,6 +77,37 @@ module c7bexu (
    input              biu_lsu_wr_ack,
    input              biu_lsu_wr_fin
 );
+
+   // intr
+   wire ext_intr_sync;
+   wire ext_intr_pulse;
+   wire csr_timer_intr_pulse; 
+
+   wire intr_pulse;
+
+   //assign intr_pulse = ext_intr_pulse | csr_timer_intr_pulse;
+   assign intr_pulse = csr_timer_intr_pulse;
+
+   intr_sync #(
+           .SYNC_STAGES(2)
+   ) u_ext_intr_sync (
+           .clk            (clk),
+           .rst_n          (resetn),
+           .intr           (ext_intr),
+           .intr_sync      (ext_intr_sync),
+           .intr_pulse     (ext_intr_pulse)
+   );
+
+   intr_sync #(
+           .SYNC_STAGES(1)
+   ) u_timer_intr_sync (
+           .clk            (clk),
+           .rst_n          (resetn),
+           .intr           (csr_timer_intr),
+           .intr_sync      (),
+           .intr_pulse     (csr_timer_intr_pulse)
+   );
+
 
    // exc
    wire exc_vld_e;
@@ -348,7 +381,7 @@ module c7bexu (
    wire [31:0] csr_isr_addr;
    wire [31:0] csr_ert_addr;
    wire csr_crmd_ie;
-   wire csr_timer_intr;
+   //wire csr_timer_intr;
 
    assign csr_raddr_d = ifu_exu_csr_raddr_d;
    assign csr_xchg_d = ifu_exu_csr_xchg_d;
@@ -389,7 +422,7 @@ module c7bexu (
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
       .csr_ecl_timer_intr              (csr_timer_intr),
 
-      .ext_intr                        () // todo
+      .ext_intr_sync                   (ext_intr_sync)
    );
 
 
@@ -426,7 +459,7 @@ module c7bexu (
    //wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
    // should also | exc_vld_e | exc_vld_m to solve illinstr exception?
    // also | ertn_vld_e | ertn_vld_m
-   wire flush = exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   wire flush = exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w | intr_pulse;
    //wire flush = exu_ifu_except | exu_ifu_ertn | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall_ifu;
@@ -473,7 +506,8 @@ module c7bexu (
    // halted. The exception code is then propagated down the pipeline and
    // resolved at the write-back (_w) stage following a pipeline drain.
    dff_ns #(1) exc_vld_m_reg (
-      .din (exc_vld_e),
+      //.din (exc_vld_e),
+      .din (exc_vld_e | intr_pulse),
       .clk (clk),
       .q   (exc_vld_m));
 
