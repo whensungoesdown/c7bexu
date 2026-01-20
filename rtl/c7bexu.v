@@ -85,8 +85,7 @@ module c7bexu (
 
    wire intr_pulse;
 
-   //assign intr_pulse = ext_intr_pulse | csr_timer_intr_pulse;
-   assign intr_pulse = csr_timer_intr_pulse;
+   assign intr_pulse = ext_intr_pulse | csr_timer_intr_pulse;
 
    intr_sync #(
            .SYNC_STAGES(2)
@@ -512,7 +511,7 @@ module c7bexu (
       .q   (exc_vld_m));
 
    dff_ns #(6) exc_code_m_reg (
-      .din (exc_code_e),
+      .din (intr_pulse ? EXC_INT : exc_code_e), // EXC_INT 6'h00
       .clk (clk),
       .q   (exc_code_m));
 
@@ -522,7 +521,7 @@ module c7bexu (
       .q   (exc_vld_w));
 
    dff_ns #(6) exc_code_w_reg (
-      .din (exc_code_m | ({6{lsu_except_ale_m}} & 6'h09) ), // EXC_ALLE
+      .din (exc_code_m | ({6{lsu_except_ale_m}} & 6'h09) ), // EXC_ALE
       .clk (clk),
       .q   (exc_code_w));
 
