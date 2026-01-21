@@ -481,6 +481,8 @@ module c7bexu (
    );
 
 
+   wire vld_e = exc_vld_e | alu_vld_e | lsu_vld_e | bru_vld_e | mul_vld_e | csr_vld_e | ertn_vld_e;
+
    //
    // Registers
    //
@@ -532,10 +534,12 @@ module c7bexu (
       .clk (clk),
       .q   (pc_e));
 
+   // pc_m must be valid because pc_w is written to CSR.era at write-back
+   // stage
    dffe_ns #(32) pc_m_reg (
       .din (pc_e),
       .clk (clk),
-      .en  (reg_en_e),
+      .en  (reg_en_e & vld_e),
       .q   (pc_m));
 
    dffe_ns #(32) pc_w_reg (
