@@ -12,6 +12,7 @@ ${PROJECT_ROOT}/rtl/c7bexu_ecl.v
 ${PROJECT_ROOT}/rtl/c7bexu_rf.v
 ${PROJECT_ROOT}/rtl/c7bexu.v
 ${PROJECT_ROOT}/rtl/intr_sync.v
+${PROJECT_ROOT}/rtl/intr_sync_delay.v
 
 ${PROJECT_ROOT}/rtl/alu.v
 ${PROJECT_ROOT}/rtl/branch.v

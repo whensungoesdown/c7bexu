@@ -5,6 +5,8 @@ module top_tb;
     reg clk;
     reg resetn;
     
+    reg              ext_intr;
+
     // EXU outputs to IFU
     wire             exu_ifu_except;
     wire [31:0]      exu_ifu_isr_addr;
@@ -102,6 +104,7 @@ module top_tb;
     // Test name storage (Verilog-2001 doesn't support string arguments in functions)
     reg [256:0] current_test_name;  // 80 characters for test name
     
+
     // Clock generation
     always #5 clk = ~clk;
     
@@ -109,6 +112,8 @@ module top_tb;
     c7bexu u_dut (
         .clk                        (clk),
         .resetn                     (resetn),
+
+	.ext_intr                   (ext_intr),
         
         .exu_ifu_except             (exu_ifu_except),
         .exu_ifu_isr_addr           (exu_ifu_isr_addr),
@@ -1880,6 +1885,7 @@ module top_tb;
     initial begin
         // Initialize
         clk = 0;
+        ext_intr = 1'b0;
         init_inputs();
         
         // Wait for some time
