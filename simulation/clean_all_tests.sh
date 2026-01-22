@@ -21,3 +21,10 @@ echo "test2_exu"
 ./clean.sh
 echo ""
 cd ..
+
+
+cd test4_intr_sync_delay
+echo "test4_intr_sync_delay"
+./clean.sh
+echo ""
+cd ..
