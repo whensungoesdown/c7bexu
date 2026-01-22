@@ -1,3 +1,9 @@
+//altera message_off 10036
+
+// Warning (10036): Verilog HDL or VHDL warning at c7bexu_rf.v(32): object "r0" assigned a value but never read
+// Warning (10036): Verilog HDL or VHDL warning at c7bexu_rf.v(32): object "r1" assigned a value but never read
+// Warning (10036): Verilog HDL or VHDL warning at c7bexu_rf.v(32): object "r2" assigned a value but never read
+
 // register file for MIPS 32
 
 module c7bexu_rf(

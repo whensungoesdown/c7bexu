@@ -62,71 +62,71 @@
 `define TAGHI0_L            5
 `define TAGHI0_P            0
 
-// EXCCODE
-`define EXC_INT         6'h00
-`define EXC_PIL         6'h01
-`define EXC_PIS         6'h02
-`define EXC_PIF         6'h03
-`define EXC_PWE         6'h04
-`define EXC_PNR         6'h05
-`define EXC_PNE         6'h06
-`define EXC_PPI         6'h07
-`define EXC_ADEF        6'h08
-`define EXC_ADEM        6'h08
-`define EXC_ALE         6'h09
-`define EXC_BCE         6'h0a
-`define EXC_SYS         6'h0b
-`define EXC_BRK         6'h0c
-`define EXC_INE         6'h0d
-`define EXC_IPE         6'h0e
-`define EXC_FPD         6'h0f
-`define EXC_SXD         6'h10
-`define EXC_ASXD        6'd11
-`define EXC_FPE         6'd12
-`define EXC_VFPE        6'd12
-`define EXC_WPEF        6'h13
-`define EXC_WPEM        6'h13
-`define EXC_BTD         6'h14
-`define EXC_BTE         6'h15
-`define EXC_GSPR        6'h16
-`define EXC_HYP         6'h17
-`define EXC_GCSC        6'h18
-`define EXC_GCHC        6'h18
-
-`define EXC_CACHEERR    6'h1e
-
-`define EXC_ERROR       6'h3e
-`define EXC_TLBR        6'h3f
-
-`define EXC_NONE        6'h30
-
-// instruction encoding
-`define GET_RK(x)       x[14:10]
-`define GET_RJ(x)       x[ 9: 5]
-`define GET_RD(x)       x[ 4: 0]
-`define GET_SA(x)       x[17:15]
-`define GET_MSLSBD(x)   x[21:10]
-`define GET_I5(x)       x[14:10]
-`define GET_I6(x)       x[15:10]
-`define GET_I12(x)      x[21:10]
-`define GET_I14(x)      x[23:10]
-`define GET_I16(x)      x[25:10]
-`define GET_I20(x)      x[24: 5]
-`define GET_OFFSET16(x) x[25:10]
-`define GET_OFFSET21(x) {x[4:0],x[25:10]}
-`define GET_OFFSET26(x) {x[9:0],x[25:10]}
-`define GET_CSR(x)      x[23:10] // TO CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-//write back source;  // TODO!!
-`define EX_SR          9
-`define EX_ALU0        9'd1
-`define EX_ALU1        9'd2
-`define EX_BRU         9'd3
-`define EX_LSU         9'd4
-`define EX_MUL         9'd5
-`define EX_DIV         9'd6
-`define EX_NONE0       9'd7
-`define EX_NONE1       9'd8
+//// EXCCODE
+//`define EXC_INT         6'h00
+//`define EXC_PIL         6'h01
+//`define EXC_PIS         6'h02
+//`define EXC_PIF         6'h03
+//`define EXC_PWE         6'h04
+//`define EXC_PNR         6'h05
+//`define EXC_PNE         6'h06
+//`define EXC_PPI         6'h07
+//`define EXC_ADEF        6'h08
+//`define EXC_ADEM        6'h08
+//`define EXC_ALE         6'h09
+//`define EXC_BCE         6'h0a
+//`define EXC_SYS         6'h0b
+//`define EXC_BRK         6'h0c
+//`define EXC_INE         6'h0d
+//`define EXC_IPE         6'h0e
+//`define EXC_FPD         6'h0f
+//`define EXC_SXD         6'h10
+//`define EXC_ASXD        6'd11
+//`define EXC_FPE         6'd12
+//`define EXC_VFPE        6'd12
+//`define EXC_WPEF        6'h13
+//`define EXC_WPEM        6'h13
+//`define EXC_BTD         6'h14
+//`define EXC_BTE         6'h15
+//`define EXC_GSPR        6'h16
+//`define EXC_HYP         6'h17
+//`define EXC_GCSC        6'h18
+//`define EXC_GCHC        6'h18
+//
+//`define EXC_CACHEERR    6'h1e
+//
+//`define EXC_ERROR       6'h3e
+//`define EXC_TLBR        6'h3f
+//
+//`define EXC_NONE        6'h30
+//
+//// instruction encoding
+//`define GET_RK(x)       x[14:10]
+//`define GET_RJ(x)       x[ 9: 5]
+//`define GET_RD(x)       x[ 4: 0]
+//`define GET_SA(x)       x[17:15]
+//`define GET_MSLSBD(x)   x[21:10]
+//`define GET_I5(x)       x[14:10]
+//`define GET_I6(x)       x[15:10]
+//`define GET_I12(x)      x[21:10]
+//`define GET_I14(x)      x[23:10]
+//`define GET_I16(x)      x[25:10]
+//`define GET_I20(x)      x[24: 5]
+//`define GET_OFFSET16(x) x[25:10]
+//`define GET_OFFSET21(x) {x[4:0],x[25:10]}
+//`define GET_OFFSET26(x) {x[9:0],x[25:10]}
+//`define GET_CSR(x)      x[23:10] // TO CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//
+////write back source;  // TODO!!
+//`define EX_SR          9
+//`define EX_ALU0        9'd1
+//`define EX_ALU1        9'd2
+//`define EX_BRU         9'd3
+//`define EX_LSU         9'd4
+//`define EX_MUL         9'd5
+//`define EX_DIV         9'd6
+//`define EX_NONE0       9'd7
+//`define EX_NONE1       9'd8
 
 // LSUop encoding
 `define LSU_NUM         10

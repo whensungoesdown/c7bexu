@@ -16,12 +16,27 @@ module intr_sync_delay #(
     // 1. Synchronization Chain
     // ==============================
     reg [SYNC_STAGES-1:0] sync_ff;
+    integer i;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             sync_ff <= {SYNC_STAGES{1'b0}};
         end else begin
-            sync_ff <= {sync_ff[SYNC_STAGES-2:0], intr};
+            // Fixed: Avoid parameter-based part-select which some tools don't like
+            // Use explicit shifting instead
+            if (SYNC_STAGES == 1) begin
+                sync_ff[0] <= intr;
+            end else if (SYNC_STAGES == 2) begin
+                sync_ff <= {sync_ff[0], intr};
+            end else if (SYNC_STAGES == 3) begin
+                sync_ff <= {sync_ff[1:0], intr};
+            end else begin
+                // For SYNC_STAGES > 3, use a for-loop to avoid part-select issues
+                for (i = SYNC_STAGES-1; i > 0; i = i - 1) begin
+                    sync_ff[i] <= sync_ff[i-1];
+                end
+                sync_ff[0] <= intr;
+            end
         end
     end
 

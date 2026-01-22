@@ -390,9 +390,11 @@ module c7bexu (
    wire csr_vld_e;
    wire csr_vld_m;
    wire [13:0] csr_raddr_d;
+   //wire csr_xchg_d;
    wire csr_xchg_e;
    wire csr_wen_e;
    wire csr_wen_m;
+   //wire [13:0] csr_waddr_d;
    wire [13:0] csr_waddr_e;
    wire [13:0] csr_waddr_m;
    wire [31:0] csr_rdata_d;
@@ -408,8 +410,8 @@ module c7bexu (
    //wire csr_timer_intr;
 
    assign csr_raddr_d = ifu_exu_csr_raddr_d;
-   assign csr_xchg_d = ifu_exu_csr_xchg_d;
-   assign csr_waddr_d = ifu_exu_csr_waddr_d;
+   //assign csr_xchg_d = ifu_exu_csr_xchg_d;
+   //assign csr_waddr_d = ifu_exu_csr_waddr_d;
    assign csr_wdata_e = rs2_data_byp_e;
    assign csr_mask_e = csr_xchg_e ? rs1_data_byp_e : 32'hFFFFFFFF;
 
@@ -539,7 +541,7 @@ module c7bexu (
       .q   (exc_vld_m));
 
    dff_ns #(6) exc_code_m_reg (
-      .din (intr_pulse ? EXC_INT : exc_code_e), // EXC_INT 6'h00
+      .din (intr_pulse ? 6'h00 : exc_code_e), // EXC_INT 6'h00
       //.din (intr_pulse_vld ? EXC_INT : exc_code_e), // EXC_INT 6'h00
       .clk (clk),
       .q   (exc_code_m));

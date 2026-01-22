@@ -54,7 +54,7 @@ module c7bexu_ecl (
    // the current lack of CSR register bypass logic. Since CSR instructions
    // are infrequent, this fixed stall penalty is acceptable.
    wire csr_stall_ifu;
-   wire csr_stall_reg_mw;
+   //wire csr_stall_reg_mw;
    wire csr_stall_in = csr_vld_e;
    wire csr_stall_q;
 
@@ -65,7 +65,7 @@ module c7bexu_ecl (
       .q     (csr_stall_q));
 
    assign csr_stall_ifu = csr_vld_e | csr_stall_q;
-   assign csr_stall_reg_mw = csr_stall_q;
+   //assign csr_stall_reg_mw = csr_stall_q;
 
 
    // CSR instructions stall IFU for 2 cycles only,
