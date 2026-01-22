@@ -1,4 +1,4 @@
-`include "defines.vh"
+`include "../../defines.vh"
 
 module c7bexu (
    input              clk,
