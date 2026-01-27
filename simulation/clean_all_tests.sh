@@ -28,3 +28,10 @@ echo "test4_intr_sync_delay"
 ./clean.sh
 echo ""
 cd ..
+
+
+cd test5_pic
+echo "test5_pic"
+./clean.sh
+echo ""
+cd ..

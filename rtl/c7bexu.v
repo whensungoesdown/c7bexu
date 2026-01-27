@@ -80,6 +80,9 @@ module c7bexu (
 
    
    wire flush;
+   wire ertn_vld_e;
+   wire ertn_vld_m;
+   wire ertn_vld_w;
 
    // intr
    wire ext_intr_sync;
@@ -87,6 +90,7 @@ module c7bexu (
    wire csr_timer_intr;
    //wire csr_timer_intr_sync; 
    //wire csr_timer_intr_pulse; 
+   wire csr_crmd_ie;
 
 //   wire intr_pulse;
 //
@@ -118,20 +122,44 @@ module c7bexu (
 //   );
 
    //wire intr = ext_intr | csr_timer_intr; // csr_ecl_crmd_ie
-   wire intr_sync = ext_intr_sync | csr_timer_intr; // csr_ecl_crmd_ie
+   //wire intr_sync = ext_intr_sync | csr_timer_intr; // csr_ecl_crmd_ie
+//   wire intr_sync = (ext_intr_sync | csr_timer_intr) &  csr_crmd_ie;
+//   wire intr_pulse;
+//
+//   intr_sync_delay #(
+//           .SYNC_STAGES(1)
+//   ) u_intr_sync (
+//           .clk            (clk),
+//           .rst_n          (resetn),
+//           .intr           (intr_sync),
+//	   //.ifu_exu_vld_d  (ifu_exu_vld_d & ~flush),
+//	   //.ifu_exu_vld_d  (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush),
+//	   //.ifu_exu_vld_d  (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
+//	   .ifu_exu_vld_d  (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
+//           .intr_sync      (),
+//           .intr_pulse     (intr_pulse)
+//   );
+
+   // this may cause intr_pulse has two assert in a row __--__
+   //wire intr_sync = ext_intr_sync | csr_timer_intr;
+   //wire intr_pulse = intr_sync & ifu_exu_vld_d & ~flush & csr_crmd_ie;
+
+   wire intr_sync;
    wire intr_pulse;
+   wire pic_csr_ext_intr;
 
-   intr_sync_delay #(
-           .SYNC_STAGES(1)
-   ) u_intr_sync (
-           .clk            (clk),
-           .rst_n          (resetn),
-           .intr           (intr_sync),
-	   .ifu_exu_vld_d  (ifu_exu_vld_d & ~flush),
-           .intr_sync      (),
-           .intr_pulse     (intr_pulse)
+   pic u_pic (
+      .clk                             (clk),
+      .resetn                          (resetn),
+      .ext_intr_sync                   (ext_intr_sync),
+      .csr_timer_intr_sync             (csr_timer_intr),
+      .vld_d                           (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
+      .ertn_w                          (ertn_vld_w),
+
+      .pic_csr_ext_intr                (pic_csr_ext_intr),
+      .intr_sync                       (intr_sync),
+      .intr_sync_pulse                 (intr_pulse)
    );
-
 
    // exc
    wire exc_vld_e;
@@ -406,7 +434,7 @@ module c7bexu (
    wire [31:0] csr_mask_m;
    wire [31:0] csr_isr_addr;
    wire [31:0] csr_ert_addr;
-   wire csr_crmd_ie;
+   //wire csr_crmd_ie;
    //wire csr_timer_intr;
 
    assign csr_raddr_d = ifu_exu_csr_raddr_d;
@@ -415,9 +443,9 @@ module c7bexu (
    assign csr_wdata_e = rs2_data_byp_e;
    assign csr_mask_e = csr_xchg_e ? rs1_data_byp_e : 32'hFFFFFFFF;
 
-   wire ertn_vld_e;
-   wire ertn_vld_m;
-   wire ertn_vld_w;
+   //wire ertn_vld_e;
+   //wire ertn_vld_m;
+   //wire ertn_vld_w;
 
 
    c7bcsr u_csr(
@@ -448,7 +476,8 @@ module c7bexu (
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
       .csr_ecl_timer_intr              (csr_timer_intr),
 
-      .ext_intr_sync                   (ext_intr_sync)
+      //.ext_intr_sync                   (ext_intr_sync)
+      .ext_intr_sync                   (pic_csr_ext_intr)
    );
 
 
@@ -522,12 +551,15 @@ module c7bexu (
    // exc
    dff_ns #(1) exc_vld_e_reg (
       //.din (ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush),
-      .din (ifu_exu_exc_vld_d | intr_pulse),
+      //.din (ifu_exu_exc_vld_d | intr_pulse),
+      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ifu_exu_vld_d & ~flush & intr_pulse)),
+      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
+      .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
       .clk (clk),
       .q   (exc_vld_e));
 
    dff_ns #(6) exc_code_e_reg (
-      .din (ifu_exu_exc_code_d),
+      .din (intr_pulse ? 6'h00 : ifu_exu_exc_code_d), // EXC_INT 6'h00
       .clk (clk),
       .q   (exc_code_e));
    
@@ -541,7 +573,7 @@ module c7bexu (
       .q   (exc_vld_m));
 
    dff_ns #(6) exc_code_m_reg (
-      .din (intr_pulse ? 6'h00 : exc_code_e), // EXC_INT 6'h00
+      .din (exc_code_e), 
       //.din (intr_pulse_vld ? EXC_INT : exc_code_e), // EXC_INT 6'h00
       .clk (clk),
       .q   (exc_code_m));
@@ -621,7 +653,8 @@ module c7bexu (
       .q   (rd_w));
 
    dffrl_ns #(1) wen_e_reg (
-      .din (ifu_exu_wen_d & ifu_exu_vld_d & ~flush),
+      //.din (ifu_exu_wen_d & ifu_exu_vld_d & ~flush),
+      .din (ifu_exu_wen_d & ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & ~intr_pulse),
       .clk (clk),
       .rst_l (resetn),
       .q   (wen_e));
@@ -869,6 +902,7 @@ module c7bexu (
    // ertn
    dff_ns #(1) ertn_vld_e_reg (
       .din (ifu_exu_ertn_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
+      //.din (ifu_exu_ertn_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
       .clk (clk),
       .q   (ertn_vld_e));
 
