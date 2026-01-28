@@ -153,7 +153,8 @@ module c7bexu (
       .resetn                          (resetn),
       .ext_intr_sync                   (ext_intr_sync),
       .csr_timer_intr_sync             (csr_timer_intr),
-      .vld_d                           (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
+      .vld_d                           (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush), // inserting ext_intr at bru instrucitons works
+      //.vld_d                           (ifu_exu_alu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
       .ertn_w                          (ertn_vld_w),
 
       .pic_csr_ext_intr                (pic_csr_ext_intr),
@@ -554,7 +555,8 @@ module c7bexu (
       //.din (ifu_exu_exc_vld_d | intr_pulse),
       //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ifu_exu_vld_d & ~flush & intr_pulse)),
       //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
-      .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
+      .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)), // bru works
+      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_alu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
       .clk (clk),
       .q   (exc_vld_e));
 
@@ -638,7 +640,7 @@ module c7bexu (
 
    // need reset for c7bexu_byp logic
    dffrle_ns #(5) rd_m_reg (
-      .din (rd_e),
+      .din (rd_e & {5{~exc_vld_e}}),
       .clk (clk),
       .en  (reg_en_e),
       .rst_l (resetn),
@@ -660,7 +662,8 @@ module c7bexu (
       .q   (wen_e));
 
    dffrle_ns #(1) wen_m_reg (
-      .din (wen_e),
+      //.din (wen_e),
+      .din (wen_e & ~exc_vld_e),
       .clk (clk),
       .en  (reg_en_e),
       .rst_l (resetn),
