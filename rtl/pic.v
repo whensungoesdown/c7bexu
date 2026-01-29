@@ -37,6 +37,8 @@ module pic (
 
   assign intr_sync = intr_inprog_bgn | intr_inprog_q;
   assign intr_sync_pulse = intr_inprog_in & ~intr_inprog_q;
-  assign pic_csr_ext_intr = ext_intr_sync & intr_sync;
+  //assign pic_csr_ext_intr = ext_intr_sync & intr_sync;
+  // temp workaround
+  assign pic_csr_ext_intr = (csr_timer_intr_sync == 1'b0) ? intr_sync : 0;
 
 endmodule
