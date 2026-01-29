@@ -67,6 +67,7 @@ module pic (
    assign intr_sync = pic_ext_intr_sync | pic_timer_intr_sync;
    assign intr_sync_pulse = pic_ext_intr_sync_pulse | pic_timer_intr_sync_pulse;
 
-   assign pic_csr_ext_intr = pic_ext_intr_sync;
+   //assign pic_csr_ext_intr = pic_ext_intr_sync;
+   assign pic_csr_ext_intr = ext_intr_sync;
 
 endmodule
