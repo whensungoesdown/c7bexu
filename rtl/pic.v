@@ -12,33 +12,61 @@ module pic (
    output             intr_sync_pulse
 );
 
-   wire all_intr_sync = ext_intr_sync | csr_timer_intr_sync;
+   // ext intr
+   wire ext_intr_inprog_in;
+   wire ext_intr_inprog_q;
 
-   wire intr_inprog_in;
-   wire intr_inprog_q;
+   wire ext_intr_inprog_bgn = (ext_intr_sync & vld_d) & ~ext_intr_inprog_q;
+   wire ext_intr_inprog_end = ertn_w;
 
-   wire intr_inprog_bgn = (all_intr_sync & vld_d) & ~intr_inprog_q;
-   wire intr_inprog_end = ertn_w;
-
-   // intr_inprog_bgn   : _-______
-   // intr_inprog_end   : ______-_
-   // intr_inprog_in    : _-----__
-   // intr_inprog_q     : __-----_
+   // ext_intr_inprog_bgn   : _-______
+   // ext_intr_inprog_end   : ______-_
+   // ext_intr_inprog_in    : _-----__
+   // ext_intr_inprog_q     : __-----_
    //
 
 
-   assign intr_inprog_in = (~intr_inprog_end) & (intr_inprog_bgn | intr_inprog_q);
+   assign ext_intr_inprog_in = (~ext_intr_inprog_end) & (ext_intr_inprog_bgn | ext_intr_inprog_q);
 
-   dffrl_ns #(1) exc_vld_e_reg (
-      .din (intr_inprog_in),
+   dffrl_ns #(1) ext_intr_inprog_reg (
+      .din (ext_intr_inprog_in),
       .clk (clk),
       .rst_l (resetn),
-      .q   (intr_inprog_q));
+      .q   (ext_intr_inprog_q));
 
-  assign intr_sync = intr_inprog_bgn | intr_inprog_q;
-  assign intr_sync_pulse = intr_inprog_in & ~intr_inprog_q;
-  //assign pic_csr_ext_intr = ext_intr_sync & intr_sync;
-  // temp workaround
-  assign pic_csr_ext_intr = (csr_timer_intr_sync == 1'b0) ? intr_sync : 0;
+   wire pic_ext_intr_sync = ext_intr_inprog_bgn | ext_intr_inprog_q;
+   wire pic_ext_intr_sync_pulse = ext_intr_inprog_in & ~ext_intr_inprog_q;
+
+
+   // csr timer intr
+   wire timer_intr_inprog_in;
+   wire timer_intr_inprog_q;
+
+   wire timer_intr_inprog_bgn = (csr_timer_intr_sync & vld_d) & ~timer_intr_inprog_q;
+   wire timer_intr_inprog_end = ertn_w;
+
+   // timer_intr_inprog_bgn   : _-______
+   // timer_intr_inprog_end   : ______-_
+   // timer_intr_inprog_in    : _-----__
+   // timer_intr_inprog_q     : __-----_
+   //
+
+
+   assign timer_intr_inprog_in = (~timer_intr_inprog_end) & (timer_intr_inprog_bgn | timer_intr_inprog_q);
+
+   dffrl_ns #(1) timer_intr_inprog_reg (
+      .din (timer_intr_inprog_in),
+      .clk (clk),
+      .rst_l (resetn),
+      .q   (timer_intr_inprog_q));
+
+   wire pic_timer_intr_sync = timer_intr_inprog_bgn | timer_intr_inprog_q;
+   wire pic_timer_intr_sync_pulse = timer_intr_inprog_in & ~timer_intr_inprog_q;
+
+
+   assign intr_sync = pic_ext_intr_sync | pic_timer_intr_sync;
+   assign intr_sync_pulse = pic_ext_intr_sync_pulse | pic_timer_intr_sync_pulse;
+
+   assign pic_csr_ext_intr = pic_ext_intr_sync;
 
 endmodule
