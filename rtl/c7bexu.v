@@ -78,6 +78,29 @@ module c7bexu (
    input              biu_lsu_wr_fin
 );
 
+   // uty: test
+   // 移位寄存器，用于记录最近7个周期的状态
+   reg [3:0] shift_reg;
+   reg uty_test /*synthesis noprune*/;
+   
+   always @(posedge clk or negedge resetn) begin
+      if (!resetn) begin
+         // 异步复位
+         shift_reg <= 4'b0;
+         uty_test <= 1'b0;
+      end else begin
+              // 将当前周期是否全0的信息移入寄存器
+              shift_reg <= {shift_reg[2:0], (ifu_exu_pc_d[11:0] == 12'b0)};
+   
+              // 检查是否连续7个周期都为0
+              if (shift_reg == 4'b1111) begin
+                 uty_test <= 1'b1;
+              end else begin
+                 uty_test <= 1'b0;
+              end
+      end
+   end
+   //
    
    wire flush;
    wire ertn_vld_e;
@@ -153,8 +176,8 @@ module c7bexu (
       .resetn                          (resetn),
       .ext_intr_sync                   (ext_intr_sync),
       .csr_timer_intr_sync             (csr_timer_intr),
-      .vld_d                           (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush), // inserting ext_intr at bru instrucitons works
-      //.vld_d                           (ifu_exu_alu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
+      //.vld_d                           (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush), // inserting ext_intr at bru instrucitons works
+      .vld_d                           (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
       .ertn_w                          (ertn_vld_w),
 
       .pic_csr_ext_intr                (pic_csr_ext_intr),
@@ -515,7 +538,11 @@ module c7bexu (
    //wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
    // should also | exc_vld_e | exc_vld_m to solve illinstr exception?
    // also | ertn_vld_e | ertn_vld_m
-   assign flush = exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   //assign flush = exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   
+   // Because lsu_except_ale_ls1 merge into exc_vld_m at _m, therefore, ale
+   // exception at _e also need to flush
+   assign flush = lsu_except_ale_ls1 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
    //wire flush = exu_ifu_except | exu_ifu_ertn | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall_ifu;
@@ -555,8 +582,8 @@ module c7bexu (
       //.din (ifu_exu_exc_vld_d | intr_pulse),
       //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ifu_exu_vld_d & ~flush & intr_pulse)),
       //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
-      .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)), // bru works
-      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_alu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
+      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)), // bru works
+      .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
       .clk (clk),
       .q   (exc_vld_e));
 
@@ -671,6 +698,7 @@ module c7bexu (
 
    dffrle_ns #(1) wen_w_reg (
       .din (wen_m & ~exc_vld_m & ~lsu_except_ale_m), // only when no exception
+      //.din (wen_m & ~lsu_except_ale_m), // only when no exception
       .clk (clk),
       .en  (reg_en_m),
       .rst_l (resetn),
@@ -873,7 +901,7 @@ module c7bexu (
       .q   (csr_xchg_e));
 
    dff_ns #(1) csr_wen_e_reg (
-      .din (ifu_exu_csr_wen_d),
+      .din (ifu_exu_csr_wen_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
       .clk (clk),
       .q   (csr_wen_e));
 

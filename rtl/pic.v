@@ -13,10 +13,10 @@ module pic (
 );
 
    // ext intr
-   wire ext_intr_inprog_in;
+   //wire ext_intr_inprog_in;
    wire ext_intr_inprog_q;
 
-   wire ext_intr_inprog_bgn = (ext_intr_sync & vld_d) & ~ext_intr_inprog_q;
+   //wire ext_intr_inprog_bgn = (ext_intr_sync & vld_d) & ~ext_intr_inprog_q;
    wire ext_intr_inprog_end = ertn_w;
 
    // ext_intr_inprog_bgn   : _-______
@@ -26,7 +26,14 @@ module pic (
    //
 
 
-   assign ext_intr_inprog_in = (~ext_intr_inprog_end) & (ext_intr_inprog_bgn | ext_intr_inprog_q);
+   //assign ext_intr_inprog_in = (~ext_intr_inprog_end) & (ext_intr_inprog_bgn | ext_intr_inprog_q);
+
+   wire ext_intr_active = ext_intr_sync & vld_d;
+   wire ext_intr_not_busy = ~ext_intr_inprog_q;
+   
+   assign ext_intr_inprog_bgn = ext_intr_active & ext_intr_not_busy;
+   assign ext_intr_inprog_in = ~ext_intr_inprog_end &
+                               (ext_intr_active & ext_intr_not_busy | ext_intr_inprog_q);
 
    dffrl_ns #(1) ext_intr_inprog_reg (
       .din (ext_intr_inprog_in),
