@@ -174,8 +174,8 @@ module c7bexu (
    pic u_pic (
       .clk                             (clk),
       .resetn                          (resetn),
-      .ext_intr_sync                   (ext_intr_sync),
-      .csr_timer_intr_sync             (csr_timer_intr),
+      .ext_intr_sync                   (ext_intr_sync & csr_crmd_ie),
+      .csr_timer_intr_sync             (csr_timer_intr & csr_crmd_ie),
       //.vld_d                           (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush), // inserting ext_intr at bru instrucitons works
       .vld_d                           (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
       .ertn_w                          (ertn_vld_w),
@@ -500,8 +500,8 @@ module c7bexu (
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
       .csr_ecl_timer_intr              (csr_timer_intr),
 
-      //.ext_intr_sync                   (ext_intr_sync)
-      .ext_intr_sync                   (pic_csr_ext_intr)
+      .ext_intr_sync                   (ext_intr_sync)
+      //.ext_intr_sync                   (pic_csr_ext_intr)
    );
 
 
