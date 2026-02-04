@@ -78,29 +78,30 @@ module c7bexu (
    input              biu_lsu_wr_fin
 );
 
-   // uty: test
-   // 移位寄存器，用于记录最近7个周期的状态
-   reg [3:0] shift_reg;
-   reg uty_test /*synthesis noprune*/;
-   
-   always @(posedge clk or negedge resetn) begin
-      if (!resetn) begin
-         // 异步复位
-         shift_reg <= 4'b0;
-         uty_test <= 1'b0;
-      end else begin
-              // 将当前周期是否全0的信息移入寄存器
-              shift_reg <= {shift_reg[2:0], (ifu_exu_pc_d[11:0] == 12'b0)};
-   
-              // 检查是否连续7个周期都为0
-              if (shift_reg == 4'b1111) begin
-                 uty_test <= 1'b1;
-              end else begin
-                 uty_test <= 1'b0;
-              end
-      end
-   end
-   //
+// Debug Code
+//   // uty: test
+//   // 移位寄存器，用于记录最近4个周期的状态
+//   reg [3:0] shift_reg;
+//   reg uty_test /*synthesis noprune*/;
+//   
+//   always @(posedge clk or negedge resetn) begin
+//      if (!resetn) begin
+//         // 异步复位
+//         shift_reg <= 4'b0;
+//         uty_test <= 1'b0;
+//      end else begin
+//              // 将当前周期是否全0的信息移入寄存器
+//              shift_reg <= {shift_reg[2:0], (ifu_exu_pc_d[11:0] == 12'b0)};
+//   
+//              // 检查是否连续4个周期都为0
+//              if (shift_reg == 4'b1111) begin
+//                 uty_test <= 1'b1;
+//              end else begin
+//                 uty_test <= 1'b0;
+//              end
+//      end
+//   end
+//   //
    
    wire flush;
    wire ertn_vld_e;
@@ -111,18 +112,8 @@ module c7bexu (
    wire ext_intr_sync;
    wire ext_intr_pulse;
    wire csr_timer_intr;
-   //wire csr_timer_intr_sync; 
-   //wire csr_timer_intr_pulse; 
    wire csr_crmd_ie;
 
-//   wire intr_pulse;
-//
-//   assign intr_pulse = ext_intr_pulse | csr_timer_intr_pulse;
-//
-//   wire all_intr_sync = ext_intr_sync | csr_timer_intr_sync; // & csr_ecl_crmd_ie
-//   wire intr_pulse_vld = ifu_exu_vld_d & ~flush & all_intr_sync;
-//
-//   wire all_intr_sync_pulse_vld_d = all_intr_sync & ifu_exu_vld_d;
 
    intr_sync #(
            .SYNC_STAGES(2)
@@ -134,38 +125,6 @@ module c7bexu (
            .intr_pulse     (ext_intr_pulse)
    );
 
-//   intr_sync #(
-//           .SYNC_STAGES(1)
-//   ) u_timer_intr_sync (
-//           .clk            (clk),
-//           .rst_n          (resetn),
-//           .intr           (csr_timer_intr),
-//           .intr_sync      (csr_timer_intr_sync),
-//           .intr_pulse     (csr_timer_intr_pulse)
-//   );
-
-   //wire intr = ext_intr | csr_timer_intr; // csr_ecl_crmd_ie
-   //wire intr_sync = ext_intr_sync | csr_timer_intr; // csr_ecl_crmd_ie
-//   wire intr_sync = (ext_intr_sync | csr_timer_intr) &  csr_crmd_ie;
-//   wire intr_pulse;
-//
-//   intr_sync_delay #(
-//           .SYNC_STAGES(1)
-//   ) u_intr_sync (
-//           .clk            (clk),
-//           .rst_n          (resetn),
-//           .intr           (intr_sync),
-//	   //.ifu_exu_vld_d  (ifu_exu_vld_d & ~flush),
-//	   //.ifu_exu_vld_d  (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush),
-//	   //.ifu_exu_vld_d  (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
-//	   .ifu_exu_vld_d  (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
-//           .intr_sync      (),
-//           .intr_pulse     (intr_pulse)
-//   );
-
-   // this may cause intr_pulse has two assert in a row __--__
-   //wire intr_sync = ext_intr_sync | csr_timer_intr;
-   //wire intr_pulse = intr_sync & ifu_exu_vld_d & ~flush & csr_crmd_ie;
 
    wire intr_sync;
    wire intr_pulse;
@@ -176,7 +135,6 @@ module c7bexu (
       .resetn                          (resetn),
       .ext_intr_sync                   (ext_intr_sync & csr_crmd_ie),
       .csr_timer_intr_sync             (csr_timer_intr & csr_crmd_ie),
-      //.vld_d                           (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush), // inserting ext_intr at bru instrucitons works
       .vld_d                           (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
       .ertn_w                          (ertn_vld_w),
 
@@ -189,12 +147,10 @@ module c7bexu (
    wire exc_vld_e;
    wire exc_vld_m;
    wire exc_vld_w;
-   //wire exc_vld_comb_w;
 
    wire [5:0] exc_code_e;
    wire [5:0] exc_code_m;
    wire [5:0] exc_code_w;
-   //wire [5:0] exc_code_comb_w;
 
 
    //
@@ -231,13 +187,10 @@ module c7bexu (
       .clk                             (clk),
       .rst                             (~resetn),
 
-      //.waddr1                          (ecl_irf_rd_w),// I, 5
       .waddr1                          (rd_w),// I, 5
       .raddr0_0                        (ifu_exu_rs1_d),// I, 5
       .raddr0_1                        (ifu_exu_rs2_d),// I, 5
-      //.wen1                            (ecl_irf_wen_w),// I, 1
       .wen1                            (wen_w),// I, 1
-      //.wdata1                          (ecl_irf_rd_data_w),// I, 32
       .wdata1                          (rd_data_w),// I, 32
       .rdata0_0                        (rs1_data_d),// O, 32
       .rdata0_1                        (rs2_data_d),// O, 32
@@ -303,7 +256,6 @@ module c7bexu (
 
    // lsu
    wire lsu_vld_e;
-   //wire lsu_vld_m;
    wire [6:0] lsu_op_e;
    wire lsu_double_read_e;
    wire [31:0] lsu_base_e;
@@ -409,8 +361,6 @@ module c7bexu (
    wire mul_hi_e;
    wire mul_short_e;
 
-   //assign mul_a_e = rs1_data_e;
-   //assign mul_b_e = rs2_data_e;
    assign mul_a_e = rs1_data_byp_e;
    assign mul_b_e = rs2_data_byp_e;
    assign mul_a_64_e = {32'b0, mul_a_e};
@@ -442,11 +392,9 @@ module c7bexu (
    wire csr_vld_e;
    wire csr_vld_m;
    wire [13:0] csr_raddr_d;
-   //wire csr_xchg_d;
    wire csr_xchg_e;
    wire csr_wen_e;
    wire csr_wen_m;
-   //wire [13:0] csr_waddr_d;
    wire [13:0] csr_waddr_e;
    wire [13:0] csr_waddr_m;
    wire [31:0] csr_rdata_d;
@@ -458,18 +406,10 @@ module c7bexu (
    wire [31:0] csr_mask_m;
    wire [31:0] csr_isr_addr;
    wire [31:0] csr_ert_addr;
-   //wire csr_crmd_ie;
-   //wire csr_timer_intr;
 
    assign csr_raddr_d = ifu_exu_csr_raddr_d;
-   //assign csr_xchg_d = ifu_exu_csr_xchg_d;
-   //assign csr_waddr_d = ifu_exu_csr_waddr_d;
    assign csr_wdata_e = rs2_data_byp_e;
    assign csr_mask_e = csr_xchg_e ? rs1_data_byp_e : 32'hFFFFFFFF;
-
-   //wire ertn_vld_e;
-   //wire ertn_vld_m;
-   //wire ertn_vld_w;
 
 
    c7bcsr u_csr(
@@ -485,16 +425,10 @@ module c7bexu (
       .csr_eentry                      (csr_isr_addr),
       .csr_era                         (csr_ert_addr),
 
-      //.ecl_csr_badv_e                  (lsu_except_badv_w), 
       .ecl_csr_badv_w                  (lsu_except_badv_w), 
-      //.exu_ifu_except                  (exc_vld_comb_w),
       .exu_ifu_except                  (exc_vld_w),
-      //.ecl_csr_exccode_e               (exc_code_w),
-      //.ecl_csr_exccode_w               (exc_code_comb_w),
       .ecl_csr_exccode_w               (exc_code_w),
-      //.ifu_Exu_pc_e                    (pc_w),
       .ifu_exu_pc_w                    (pc_w),
-      //.ecl_csr_ertn_e                  (ertn_vld_w),
       .ecl_csr_ertn_w                  (ertn_vld_w),
 
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
@@ -522,28 +456,20 @@ module c7bexu (
    assign exu_ifu_branch = bru_branch_w;
    assign exu_ifu_brn_addr = bru_brn_addr_w;
 
-   //assign exu_ifu_except = exc_vld_comb_w;
    assign exu_ifu_except = exc_vld_w;
    assign exu_ifu_isr_addr = csr_isr_addr;
 
    assign exu_ifu_ertn = ertn_vld_w;
    assign exu_ifu_ert_addr = csr_ert_addr;
 
-//   assign exc_vld_comb_w = exc_vld_w | lsu_except_ale_m;
-//   assign exc_code_comb_w = exc_code_w | ({6{lsu_except_ale_m}} & 6'h09); // EXC_ALE 
 
 
    wire stall_ifu;
    wire stall_reg_mw;
-   //wire flush = exu_ifu_except | exu_ifu_branch | exu_ifu_ertn;
-   // should also | exc_vld_e | exc_vld_m to solve illinstr exception?
-   // also | ertn_vld_e | ertn_vld_m
-   //assign flush = exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
    
    // Because lsu_except_ale_ls1 merge into exc_vld_m at _m, therefore, ale
    // exception at _e also need to flush
    assign flush = lsu_except_ale_ls1 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
-   //wire flush = exu_ifu_except | exu_ifu_ertn | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall_ifu;
 
@@ -567,6 +493,11 @@ module c7bexu (
 
    wire vld_e = exc_vld_e | alu_vld_e | lsu_vld_e | bru_vld_e | mul_vld_e | csr_vld_e | ertn_vld_e;
 
+   // a valid instrution, with no exception so far, not flushed by previous
+   // instructions, and no interruption
+   wire good_to_issue = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse;
+
+
    //
    // Registers
    //
@@ -578,11 +509,8 @@ module c7bexu (
 
    // exc
    dff_ns #(1) exc_vld_e_reg (
-      //.din (ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush),
-      //.din (ifu_exu_exc_vld_d | intr_pulse),
-      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ifu_exu_vld_d & ~flush & intr_pulse)),
-      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
-      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_bru_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)), // bru works
+      // origitnal exception ready to issue | a valid non-exception instrution
+      //                                      inserted with the interruption
       .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
       .clk (clk),
       .q   (exc_vld_e));
@@ -597,13 +525,11 @@ module c7bexu (
    // resolved at the write-back (_w) stage following a pipeline drain.
    dff_ns #(1) exc_vld_m_reg (
       .din (exc_vld_e),
-      //.din (exc_vld_e | intr_pulse),
       .clk (clk),
       .q   (exc_vld_m));
 
    dff_ns #(6) exc_code_m_reg (
       .din (exc_code_e), 
-      //.din (intr_pulse_vld ? EXC_INT : exc_code_e), // EXC_INT 6'h00
       .clk (clk),
       .q   (exc_code_m));
 
@@ -682,14 +608,12 @@ module c7bexu (
       .q   (rd_w));
 
    dffrl_ns #(1) wen_e_reg (
-      //.din (ifu_exu_wen_d & ifu_exu_vld_d & ~flush),
-      .din (ifu_exu_wen_d & ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & ~intr_pulse),
+      .din (ifu_exu_wen_d & good_to_issue),
       .clk (clk),
       .rst_l (resetn),
       .q   (wen_e));
 
    dffrle_ns #(1) wen_m_reg (
-      //.din (wen_e),
       .din (wen_e & ~exc_vld_e),
       .clk (clk),
       .en  (reg_en_e),
@@ -698,7 +622,6 @@ module c7bexu (
 
    dffrle_ns #(1) wen_w_reg (
       .din (wen_m & ~exc_vld_m & ~lsu_except_ale_m), // only when no exception
-      //.din (wen_m & ~lsu_except_ale_m), // only when no exception
       .clk (clk),
       .en  (reg_en_m),
       .rst_l (resetn),
@@ -717,8 +640,7 @@ module c7bexu (
 
    // alu
    dff_ns #(1) alu_vld_e_reg (
-      //.din (ifu_exu_alu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
-      .din (ifu_exu_alu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
+      .din (ifu_exu_alu_vld_d & good_to_issue),
       .clk (clk),
       .q   (alu_vld_e));
 
@@ -760,7 +682,7 @@ module c7bexu (
 
    // lsu
    dffrl_ns #(1) lsu_vld_e_reg (
-      .din (ifu_exu_lsu_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
+      .din (ifu_exu_lsu_vld_d & good_to_issue),
       .clk (clk),
       .rst_l (resetn),
       .q   (lsu_vld_e));
@@ -794,7 +716,7 @@ module c7bexu (
 
    // bru
    dff_ns #(1) bru_vld_e_reg (
-      .din (ifu_exu_bru_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
+      .din (ifu_exu_bru_vld_d & good_to_issue),
       .clk (clk),
       .q   (bru_vld_e));
 
@@ -840,7 +762,7 @@ module c7bexu (
 
    // mul
    dff_ns #(1) mul_vld_e_reg (
-      .din (ifu_exu_mul_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
+      .din (ifu_exu_mul_vld_d & good_to_issue),
       .clk (clk),
       .q   (mul_vld_e));
 
@@ -874,7 +796,7 @@ module c7bexu (
    // CSR register updates are not affected by CSR stalls.
    // CSR stalls only block IFU for 2 cycles to prevent instruction fetch.
    dffrl_ns #(1) csr_vld_e_reg (
-      .din (ifu_exu_csr_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
+      .din (ifu_exu_csr_vld_d & good_to_issue),
       .clk (clk),
       .rst_l (resetn),
       .q   (csr_vld_e));
@@ -901,7 +823,7 @@ module c7bexu (
       .q   (csr_xchg_e));
 
    dff_ns #(1) csr_wen_e_reg (
-      .din (ifu_exu_csr_wen_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
+      .din (ifu_exu_csr_wen_d & good_to_issue),
       .clk (clk),
       .q   (csr_wen_e));
 
@@ -932,8 +854,7 @@ module c7bexu (
 
    // ertn
    dff_ns #(1) ertn_vld_e_reg (
-      .din (ifu_exu_ertn_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse),
-      //.din (ifu_exu_ertn_vld_d & (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush),
+      .din (ifu_exu_ertn_vld_d & good_to_issue),
       .clk (clk),
       .q   (ertn_vld_e));
 
