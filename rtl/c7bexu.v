@@ -75,7 +75,9 @@ module c7bexu (
    output [7:0]       lsu_biu_wr_strb,
 
    input              biu_lsu_wr_ack,
-   input              biu_lsu_wr_fin
+   input              biu_lsu_wr_fin,
+
+   output             csr_ifu_ic_en 
 );
 
 // Debug Code
@@ -432,6 +434,7 @@ module c7bexu (
       .ecl_csr_ertn_w                  (ertn_vld_w),
 
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
+      .csr_ifu_ic_en                   (csr_ifu_ic_en), 
       .csr_ecl_timer_intr              (csr_timer_intr),
 
       .ext_intr_sync                   (ext_intr_sync)
