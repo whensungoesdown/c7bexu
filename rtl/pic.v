@@ -31,8 +31,8 @@ module pic (
    wire ext_intr_active = ext_intr_sync & vld_d;
    wire ext_intr_not_busy = ~ext_intr_inprog_q;
    
-   assign ext_intr_inprog_bgn = ext_intr_active & ext_intr_not_busy;
-   assign ext_intr_inprog_in = ~ext_intr_inprog_end &
+   wire ext_intr_inprog_bgn = ext_intr_active & ext_intr_not_busy;
+   wire ext_intr_inprog_in = ~ext_intr_inprog_end &
                                (ext_intr_active & ext_intr_not_busy | ext_intr_inprog_q);
 
    dffrl_ns #(1) ext_intr_inprog_reg (
