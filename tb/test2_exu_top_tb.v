@@ -50,6 +50,11 @@ module top_tb;
     reg              ifu_exu_mul_hi_d;
     reg              ifu_exu_mul_short_d;
     
+    // DIV related
+    reg              ifu_exu_div_vld_d;
+    reg              ifu_exu_div_signed_d;
+    reg              ifu_exu_div_mod_d;
+    
     // CSR related
     reg              ifu_exu_csr_vld_d;
     reg  [13:0]      ifu_exu_csr_raddr_d;
@@ -151,6 +156,10 @@ module top_tb;
         .ifu_exu_mul_double_d       (ifu_exu_mul_double_d),
         .ifu_exu_mul_hi_d           (ifu_exu_mul_hi_d),
         .ifu_exu_mul_short_d        (ifu_exu_mul_short_d),
+
+	.ifu_exu_div_vld_d          (ifu_exu_div_vld_d),
+	.ifu_exu_div_signed_d       (ifu_exu_div_signed_d),
+	.ifu_exu_div_mod_d          (ifu_exu_div_mod_d),
         
         .ifu_exu_csr_vld_d          (ifu_exu_csr_vld_d),
         .ifu_exu_csr_raddr_d        (ifu_exu_csr_raddr_d),
@@ -229,6 +238,10 @@ module top_tb;
         ifu_exu_mul_double_d = 0;
         ifu_exu_mul_hi_d = 0;
         ifu_exu_mul_short_d = 0;
+
+	ifu_exu_div_vld_d = 0;
+	ifu_exu_div_signed_d = 0;
+	ifu_exu_div_mod_d = 0;
         
         ifu_exu_csr_vld_d = 0;
         ifu_exu_csr_raddr_d = 0;

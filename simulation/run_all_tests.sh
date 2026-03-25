@@ -6,11 +6,11 @@ echo
 cd test0_byp
 echo "test0_byp"
 result=$(./simulate.sh)
-if echo "$result" | grep "PASS"; then
-    printf "PASS!\n"
-elif echo "$result" | grep "FAIL"; then
+if echo "$result" | grep "FAIL"; then
     printf "FAIL!\n"
     exit 1
+elif echo "$result" | grep "PASS"; then
+    printf "PASS!\n"
 else
     printf "Unknown result\n"
     exit 1
@@ -22,7 +22,7 @@ cd ..
 cd test1_ecl
 echo "test1_ecl"
 result=$(./simulate.sh)
-if echo "$result" | grep "PASS"; then
+if echo "$result" | grep "ALL TESTS PASSED"; then
     printf "PASS!\n"
 elif echo "$result" | grep "FAIL"; then
     printf "FAIL!\n"
@@ -38,11 +38,11 @@ cd ..
 cd test2_exu
 echo "test2_exu"
 result=$(./simulate.sh)
-if echo "$result" | grep "PASS"; then
-    printf "PASS!\n"
-elif echo "$result" | grep "FAIL"; then
+if echo "$result" | grep "FAIL"; then
     printf "FAIL!\n"
     exit 1
+elif echo "$result" | grep "PASS"; then
+    printf "PASS!\n"
 else
     printf "Unknown result\n"
     exit 1
@@ -54,11 +54,11 @@ cd ..
 cd test4_intr_sync_delay
 echo "test4_intr_sync_delay"
 result=$(./simulate.sh)
-if echo "$result" | grep "PASS"; then
-    printf "PASS!\n"
-elif echo "$result" | grep "FAIL"; then
+if echo "$result" | grep "FAIL"; then
     printf "FAIL!\n"
     exit 1
+elif echo "$result" | grep "PASS"; then
+    printf "PASS!\n"
 else
     printf "Unknown result\n"
     exit 1
@@ -70,11 +70,11 @@ cd ..
 cd test5_pic
 echo "test5_pic"
 result=$(./simulate.sh)
-if echo "$result" | grep "PASS"; then
-    printf "PASS!\n"
-elif echo "$result" | grep "FAIL"; then
+if echo "$result" | grep "FAIL"; then
     printf "FAIL!\n"
     exit 1
+elif echo "$result" | grep "PASS"; then
+    printf "PASS!\n"
 else
     printf "Unknown result\n"
     exit 1

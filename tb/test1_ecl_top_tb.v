@@ -38,6 +38,8 @@ reg lsu_except_ecc_ls3;
 reg lsu_data_valid_ls3;
 reg lsu_wr_fin_ls3;
 reg csr_vld_e;
+reg div_vld_e;
+reg div_complete_m;
 
 c7bexu_ecl dut (
     .clk(clk),
@@ -50,7 +52,9 @@ c7bexu_ecl dut (
     .lsu_except_ecc_ls3(lsu_except_ecc_ls3),
     .lsu_data_valid_ls3(lsu_data_valid_ls3),
     .lsu_wr_fin_ls3(lsu_wr_fin_ls3),
-    .csr_vld_e(csr_vld_e)
+    .csr_vld_e(csr_vld_e),
+    .div_vld_e(div_vld_e),
+    .div_complete_m(div_complete_m)
 );
 
 // ===========================================
@@ -65,6 +69,8 @@ begin
     lsu_data_valid_ls3 = 0;
     lsu_wr_fin_ls3 = 0;
     csr_vld_e = 0;
+    div_vld_e = 0;
+    div_complete_m = 0;
 end
 endtask
 

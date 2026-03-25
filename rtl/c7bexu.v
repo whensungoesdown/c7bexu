@@ -47,6 +47,11 @@ module c7bexu (
    input              ifu_exu_mul_hi_d,
    input              ifu_exu_mul_short_d,
 
+   // div
+   input              ifu_exu_div_vld_d,
+   input              ifu_exu_div_signed_d,
+   input              ifu_exu_div_mod_d,
+
    // csr
    input              ifu_exu_csr_vld_d,
    input  [13:0]      ifu_exu_csr_raddr_d, // CSR_BIT 14
@@ -392,6 +397,36 @@ module c7bexu (
       .mul_ready                       ()
    );
 
+
+   // div
+   wire div_vld_e;
+   wire div_vld_m;
+   wire [31:0] div_a_e;
+   wire [31:0] div_b_e;
+   wire div_signed_e;
+   wire div_mod_e;
+   wire div_mod_m;
+   wire [31:0] div_s_m;
+   wire [31:0] div_r_m;
+   wire div_complete_m;
+
+   assign div_a_e = rs1_data_byp_e;
+   assign div_b_e = rs2_data_byp_e;
+
+   div u_div (
+      .div_clk                         (clk),
+      .reset                           (~resetn),
+
+      .div                             (div_vld_e),
+      .div_signed                      (div_signed_e),
+      .x                               (div_a_e),
+      .y                               (div_b_e),
+      .s                               (div_s_m),
+      .r                               (div_r_m),
+      .complete                        (div_complete_m)
+   );
+
+
    // csr
    wire csr_vld_e;
    wire csr_vld_m;
@@ -445,11 +480,13 @@ module c7bexu (
    );
 
 
-   assign rd_data_m = ({32{alu_vld_m}}        & alu_res_m) |
-                      ({32{lsu_data_vld_ls3}} & lsu_data_ls3) |
-                      ({32{bru_vld_m}}        & bru_link_pc_m) |
-                      ({32{mul_vld_m}}        & mul_res_m) |
-                      ({32{csr_vld_m}}        & csr_rdata_m);
+   assign rd_data_m = ({32{alu_vld_m}}               & alu_res_m) |
+                      ({32{lsu_data_vld_ls3}}        & lsu_data_ls3) |
+                      ({32{bru_vld_m}}               & bru_link_pc_m) |
+                      ({32{mul_vld_m}}               & mul_res_m) |
+                      ({32{csr_vld_m}}               & csr_rdata_m) |
+                      ({32{div_vld_m &  div_mod_m}}  & div_r_m) |
+                      ({32{div_vld_m & ~div_mod_m}}  & div_s_m);
 
    // This circuit implementation is prioritized.
    //assign rd_data_m = alu_vld_m                     ? alu_res_m :
@@ -493,11 +530,14 @@ module c7bexu (
       .lsu_data_valid_ls3              (lsu_data_vld_ls3),
       .lsu_wr_fin_ls3                  (lsu_wr_fin_ls3),
 
-      .csr_vld_e                       (csr_vld_e)  // stall two cycles will be engough
+      .csr_vld_e                       (csr_vld_e),  // stall two cycles will be engough
+
+      .div_vld_e                       (div_vld_e),
+      .div_complete_m                  (div_complete_m)
    );
 
 
-   wire vld_e = exc_vld_e | alu_vld_e | lsu_vld_e | bru_vld_e | mul_vld_e | csr_vld_e | ertn_vld_e;
+   wire vld_e = exc_vld_e | alu_vld_e | lsu_vld_e | bru_vld_e | mul_vld_e | div_vld_e | csr_vld_e | ertn_vld_e;
 
    // a valid instrution, with no exception so far, not flushed by previous
    // instructions, and no interruption
@@ -796,6 +836,32 @@ module c7bexu (
       .din (ifu_exu_mul_short_d),
       .clk (clk),
       .q   (mul_short_e));
+
+   // div
+   dff_ns #(1) div_vld_e_reg (
+      .din (ifu_exu_div_vld_d & good_to_issue),
+      .clk (clk),
+      .q   (div_vld_e));
+
+   dff_ns #(1) div_vld_m_reg (
+      .din (div_vld_e),
+      .clk (clk),
+      .q   (div_vld_m));
+
+   dff_ns #(1) div_signed_e_reg (
+      .din (ifu_exu_div_signed_d),
+      .clk (clk),
+      .q   (div_signed_e));
+
+   dff_ns #(1) div_mod_e_reg (
+      .din (ifu_exu_div_mod_d),
+      .clk (clk),
+      .q   (div_mod_e));
+
+   dff_ns #(1) div_mod_m_reg (
+      .din (div_mod_e),
+      .clk (clk),
+      .q   (div_mod_m));
 
    // csr
    //

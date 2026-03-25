@@ -20,6 +20,7 @@ ${PROJECT_ROOT}/../alu.v
 ${PROJECT_ROOT}/../branch.v
 ${PROJECT_ROOT}/../mul32x32.v
 ${PROJECT_ROOT}/../mul64x64.v
+${PROJECT_ROOT}/../div.v
 
 -f ${PROJECT_ROOT}/../c7blsu/flist/c7blsu.flist
 -f ${PROJECT_ROOT}/../c7bcsr/flist/c7bcsr.flist

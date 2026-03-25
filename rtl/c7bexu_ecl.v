@@ -12,7 +12,10 @@ module c7bexu_ecl (
    input              lsu_data_valid_ls3,
    input              lsu_wr_fin_ls3,
 
-   input              csr_vld_e
+   input              csr_vld_e,
+
+   input              div_vld_e,
+   input              div_complete_m
 );
 
    wire lsu_stall_ifu;
@@ -23,12 +26,12 @@ module c7bexu_ecl (
    wire lsu_bgn = lsu_vld_e;
    wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3;
 
-   // lsu_bgn        : _-______
-   // lsu_end        : ______-_
+   // lsu_bgn            : _-______
+   // lsu_end            : ______-_
    //
-   // lsu_stall_in   : _-----__
-   // lsu_stall_q    : __-----_
-   // lsu_stall_ifu  : _------_
+   // lsu_stall_in       : _-----__
+   // lsu_stall_q        : __-----_
+   // lsu_stall_ifu      : _------_
    // lsu_stall_reg_mw   : __-----_
 
    //assign lsu_stall_in = (lsu_stall_q & ~lsu_end) | lsu_bgn;
@@ -68,10 +71,39 @@ module c7bexu_ecl (
    //assign csr_stall_reg_mw = csr_stall_q;
 
 
+   // div 32 cycles
+   wire div_stall_ifu;
+   wire div_stall_reg_mw;
+   wire div_stall_in;
+   wire div_stall_q;
+
+   wire div_bgn = div_vld_e;
+   wire div_end = div_complete_m;
+
+   // div_bgn            : _-______
+   // div_end            : ______-_
+   //
+   // div_stall_in       : _-----__
+   // div_stall_q        : __-----_
+   // div_stall_ifu      : _------_
+   // div_stall_reg_mw   : __-----_
+
+   assign div_stall_in = (~div_end) & (div_bgn | div_stall_q);
+
+   dffrl_ns #(1) div_stall_reg (
+      .din   (div_stall_in),
+      .clk   (clk),
+      .rst_l (resetn),
+      .q     (div_stall_q));
+
+   assign div_stall_ifu = div_stall_in; 
+   assign div_stall_reg_mw = div_stall_q & ~div_end; 
+
+
    // CSR instructions stall IFU for 2 cycles only,
    // but complete execution within the main pipeline.
-   assign stall_ifu = lsu_stall_ifu | csr_stall_ifu;
+   assign stall_ifu = lsu_stall_ifu | csr_stall_ifu | div_stall_ifu;
    //assign stall_reg_mw = lsu_stall_reg_mw | csr_stall_reg_mw;
-   assign stall_reg_mw = lsu_stall_reg_mw;
+   assign stall_reg_mw = lsu_stall_reg_mw | div_stall_reg_mw;
 
 endmodule
