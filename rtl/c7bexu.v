@@ -843,9 +843,10 @@ module c7bexu (
       .clk (clk),
       .q   (div_vld_e));
 
-   dff_ns #(1) div_vld_m_reg (
+   dffe_ns #(1) div_vld_m_reg (
       .din (div_vld_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (div_vld_m));
 
    dff_ns #(1) div_signed_e_reg (
@@ -858,9 +859,10 @@ module c7bexu (
       .clk (clk),
       .q   (div_mod_e));
 
-   dff_ns #(1) div_mod_m_reg (
+   dffe_ns #(1) div_mod_m_reg (
       .din (div_mod_e),
       .clk (clk),
+      .en  (reg_en_e),
       .q   (div_mod_m));
 
    // csr
