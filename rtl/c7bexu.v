@@ -544,6 +544,31 @@ module c7bexu (
    wire good_to_issue = (ifu_exu_vld_d & ~ifu_exu_exc_vld_d) & ~flush & ~intr_pulse;
 
 
+   // exc
+   reg intr_pending;
+   wire intr_insert_condition = ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush;
+   wire intr_to_insert = intr_pending | intr_pulse;   // pulse or pending
+
+   always @(posedge clk or negedge resetn) begin
+      if (!resetn) begin
+         intr_pending <= 1'b0;
+      end else begin
+         if (intr_pulse) begin
+            // new interrupt arrives: if currently insertable then insert immediately (no pending), else pend
+            if (intr_insert_condition)
+               intr_pending <= 1'b0;   // consumed immediately, no pending
+            else
+               intr_pending <= 1'b1;   // pend and wait
+         end else if (intr_pending && intr_insert_condition) begin
+            // pending interrupt inserted when condition satisfied, clear pending
+            intr_pending <= 1'b0;
+         end
+      end
+   end
+   // exc_vld_e_reg.din now uses intr_to_insert condition, but ensure it's inserted only once
+   // Note: when intr_pending and intr_insert_condition are both active, insertion signal should be generated and pending cleared.
+
+
    //
    // Registers
    //
@@ -557,7 +582,8 @@ module c7bexu (
    dff_ns #(1) exc_vld_e_reg (
       // origitnal exception ready to issue | a valid non-exception instrution
       //                                      inserted with the interruption
-      .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
+      //.din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_pulse)),
+      .din ((ifu_exu_exc_vld_d & ifu_exu_vld_d & ~flush) | (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush & intr_to_insert)),
       .clk (clk),
       .q   (exc_vld_e));
 
