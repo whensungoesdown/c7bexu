@@ -58,6 +58,8 @@ module c7bexu (
    input              ifu_exu_csr_xchg_d,
    input              ifu_exu_csr_wen_d,
    input  [13:0]      ifu_exu_csr_waddr_d, // CSR_BIT 14
+   input              ifu_exu_csr_rdtimel_d,
+   input              ifu_exu_csr_rdtimeh_d,
 
    // ertn
    input              ifu_exu_ertn_vld_d,
@@ -431,6 +433,8 @@ module c7bexu (
    wire csr_vld_e;
    wire csr_vld_m;
    wire [13:0] csr_raddr_d;
+   wire csr_rdtimel_d;
+   wire csr_rdtimeh_d;
    wire csr_xchg_e;
    wire csr_wen_e;
    wire csr_wen_m;
@@ -447,6 +451,8 @@ module c7bexu (
    wire [31:0] csr_ert_addr;
 
    assign csr_raddr_d = ifu_exu_csr_raddr_d;
+   assign csr_rdtimel_d = ifu_exu_csr_rdtimel_d;
+   assign csr_rdtimeh_d = ifu_exu_csr_rdtimeh_d;
    assign csr_wdata_e = rs2_data_byp_e;
    assign csr_mask_e = csr_xchg_e ? rs1_data_byp_e : 32'hFFFFFFFF;
 
@@ -460,6 +466,8 @@ module c7bexu (
       .csr_wdata                       (csr_wdata_m),
       .csr_mask                        (csr_mask_m),
       .csr_wen                         (csr_wen_m),
+      .csr_rdtimel                     (csr_rdtimel_d),
+      .csr_rdtimeh                     (csr_rdtimeh_d),
 
       .csr_eentry                      (csr_isr_addr),
       .csr_era                         (csr_ert_addr),
