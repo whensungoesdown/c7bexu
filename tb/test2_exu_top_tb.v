@@ -61,6 +61,8 @@ module top_tb;
     reg              ifu_exu_csr_xchg_d;
     reg              ifu_exu_csr_wen_d;
     reg  [13:0]      ifu_exu_csr_waddr_d;
+    reg              ifu_exu_csr_rdtimel_d;
+    reg              ifu_exu_csr_rdtimeh_d;
     
     // ERTN
     reg              ifu_exu_ertn_vld_d;
@@ -68,6 +70,7 @@ module top_tb;
     // EXC
     reg              ifu_exu_exc_vld_d;
     reg  [5:0]       ifu_exu_exc_code_d;
+    reg  [31:0]      ifu_exu_exc_badv_d;
     
     // BIU interface
     wire             lsu_biu_rd_req;
@@ -75,12 +78,21 @@ module top_tb;
     reg              biu_lsu_rd_ack;
     reg              biu_lsu_data_vld;
     reg  [63:0]      biu_lsu_data;
+    reg              biu_lsu_fault;
+    reg  [1:0]       biu_lsu_fault_code;
+    
     wire             lsu_biu_wr_req;
     wire [31:0]      lsu_biu_wr_addr;
     wire [63:0]      lsu_biu_wr_data;
     wire [7:0]       lsu_biu_wr_strb;
     reg              biu_lsu_wr_ack;
     reg              biu_lsu_wr_fin;
+    reg              biu_lsu_wr_fault;
+    reg  [1:0]       biu_lsu_wr_fault_code;
+    
+    // CSR outputs to IFU
+    wire             csr_ifu_ic_en;
+    wire             csr_ifu_ic_en_pls;
     
     // Internal signals for monitoring
     wire [31:0]      rs1_data_d;
@@ -92,24 +104,21 @@ module top_tb;
     wire             wen_w;
     wire [31:0]      rd_data_w;
     wire             lsu_vld_e;
-    //wire             lsu_vld_m;
     wire [31:0]      alu_res_m;
     wire [31:0]      lsu_data_ls3;
     wire             lsu_data_vld_ls3;
     wire             lsu_except_ale_ls1;
     wire             lsu_except_buserr_ls3;
     wire             lsu_except_ecc_ls3;
-    //wire             lsu_ecl_wr_fin_ls3;
     
     // Test statistics
     integer test_count = 0;
     integer pass_count = 0;
     integer fail_count = 0;
     
-    // Test name storage (Verilog-2001 doesn't support string arguments in functions)
-    reg [256:0] current_test_name;  // 80 characters for test name
+    // Test name storage
+    reg [256:0] current_test_name;
     
-
     // Clock generation
     always #5 clk = ~clk;
     
@@ -118,7 +127,7 @@ module top_tb;
         .clk                        (clk),
         .resetn                     (resetn),
 
-	.ext_intr                   (ext_intr),
+        .ext_intr                   (ext_intr),
         
         .exu_ifu_except             (exu_ifu_except),
         .exu_ifu_isr_addr           (exu_ifu_isr_addr),
@@ -157,20 +166,23 @@ module top_tb;
         .ifu_exu_mul_hi_d           (ifu_exu_mul_hi_d),
         .ifu_exu_mul_short_d        (ifu_exu_mul_short_d),
 
-	.ifu_exu_div_vld_d          (ifu_exu_div_vld_d),
-	.ifu_exu_div_signed_d       (ifu_exu_div_signed_d),
-	.ifu_exu_div_mod_d          (ifu_exu_div_mod_d),
+        .ifu_exu_div_vld_d          (ifu_exu_div_vld_d),
+        .ifu_exu_div_signed_d       (ifu_exu_div_signed_d),
+        .ifu_exu_div_mod_d          (ifu_exu_div_mod_d),
         
         .ifu_exu_csr_vld_d          (ifu_exu_csr_vld_d),
         .ifu_exu_csr_raddr_d        (ifu_exu_csr_raddr_d),
         .ifu_exu_csr_xchg_d         (ifu_exu_csr_xchg_d),
         .ifu_exu_csr_wen_d          (ifu_exu_csr_wen_d),
         .ifu_exu_csr_waddr_d        (ifu_exu_csr_waddr_d),
+        .ifu_exu_csr_rdtimel_d      (ifu_exu_csr_rdtimel_d),
+        .ifu_exu_csr_rdtimeh_d      (ifu_exu_csr_rdtimeh_d),
         
         .ifu_exu_ertn_vld_d         (ifu_exu_ertn_vld_d),
         
         .ifu_exu_exc_vld_d          (ifu_exu_exc_vld_d),
         .ifu_exu_exc_code_d         (ifu_exu_exc_code_d),
+        .ifu_exu_exc_badv_d         (ifu_exu_exc_badv_d),
         
         .lsu_biu_rd_req             (lsu_biu_rd_req),
         .lsu_biu_rd_addr            (lsu_biu_rd_addr),
@@ -178,6 +190,8 @@ module top_tb;
         .biu_lsu_rd_ack             (biu_lsu_rd_ack),
         .biu_lsu_data_vld           (biu_lsu_data_vld),
         .biu_lsu_data               (biu_lsu_data),
+        .biu_lsu_fault              (biu_lsu_fault),
+        .biu_lsu_fault_code         (biu_lsu_fault_code),
         
         .lsu_biu_wr_req             (lsu_biu_wr_req),
         .lsu_biu_wr_addr            (lsu_biu_wr_addr),
@@ -185,7 +199,12 @@ module top_tb;
         .lsu_biu_wr_strb            (lsu_biu_wr_strb),
         
         .biu_lsu_wr_ack             (biu_lsu_wr_ack),
-        .biu_lsu_wr_fin             (biu_lsu_wr_fin)
+        .biu_lsu_wr_fin             (biu_lsu_wr_fin),
+        .biu_lsu_wr_fault           (biu_lsu_wr_fault),
+        .biu_lsu_wr_fault_code      (biu_lsu_wr_fault_code),
+        
+        .csr_ifu_ic_en              (csr_ifu_ic_en),
+        .csr_ifu_ic_en_pls          (csr_ifu_ic_en_pls)
     );
     
     // Connect internal signals (through hierarchical reference)
@@ -198,14 +217,12 @@ module top_tb;
     assign wen_w = u_dut.wen_w;
     assign rd_data_w = u_dut.rd_data_w;
     assign lsu_vld_e = u_dut.lsu_vld_e;
-    //assign lsu_vld_m = u_dut.lsu_vld_m;
     assign alu_res_m = u_dut.alu_res_m;
     assign lsu_data_ls3 = u_dut.lsu_data_ls3;
     assign lsu_data_vld_ls3 = u_dut.lsu_data_vld_ls3;
     assign lsu_except_ale_ls1 = u_dut.lsu_except_ale_ls1;
     assign lsu_except_buserr_ls3 = u_dut.lsu_except_buserr_ls3;
     assign lsu_except_ecc_ls3 = u_dut.lsu_except_ecc_ls3;
-    //assign lsu_ecl_wr_fin_ls3 = u_dut.lsu_ecl_wr_fin_ls3;
     
     // Task: Initialize all inputs
     task init_inputs;
@@ -239,25 +256,34 @@ module top_tb;
         ifu_exu_mul_hi_d = 0;
         ifu_exu_mul_short_d = 0;
 
-	ifu_exu_div_vld_d = 0;
-	ifu_exu_div_signed_d = 0;
-	ifu_exu_div_mod_d = 0;
+        ifu_exu_div_vld_d = 0;
+        ifu_exu_div_signed_d = 0;
+        ifu_exu_div_mod_d = 0;
         
         ifu_exu_csr_vld_d = 0;
         ifu_exu_csr_raddr_d = 0;
         ifu_exu_csr_xchg_d = 0;
         ifu_exu_csr_wen_d = 0;
         ifu_exu_csr_waddr_d = 0;
+        ifu_exu_csr_rdtimel_d = 0;
+        ifu_exu_csr_rdtimeh_d = 0;
         
         ifu_exu_ertn_vld_d = 0;
         ifu_exu_exc_vld_d = 0;
         ifu_exu_exc_code_d = 0;
+        ifu_exu_exc_badv_d = 0;
         
         biu_lsu_rd_ack = 0;
         biu_lsu_data_vld = 0;
         biu_lsu_data = 0;
+        biu_lsu_fault = 0;
+        biu_lsu_fault_code = 0;
         biu_lsu_wr_ack = 0;
         biu_lsu_wr_fin = 0;
+        biu_lsu_wr_fault = 0;
+        biu_lsu_wr_fault_code = 0;
+        
+        ext_intr = 0;
     end
     endtask
     
@@ -563,7 +589,7 @@ module top_tb;
             passed = 0;
         end
         
-	// No stall when ALE happen
+        // No stall when ALE happen
         //// Check 5: Stall cycles should be reasonable (LSU typically needs multiple cycles)
         //if (stall_cycles !== 1) begin
         //    $display("ERROR: stall cycles should be 1 cycle when ALE happen");
@@ -589,9 +615,9 @@ module top_tb;
         end
 
 
-	//
-	// Second Instruction
-	//
+        //
+        // Second Instruction
+        //
         // Setup ADD instruction: add.w $r1, $r2, $r3
         ifu_exu_vld_d = 1;
         ifu_exu_pc_d = 32'h1C00_0004;
@@ -600,8 +626,8 @@ module top_tb;
         ifu_exu_rd_d = 1;      // $r1
         ifu_exu_wen_d = 1;
         
-	u_dut.u_rf.regs[2] = 32'h10;
-	u_dut.u_rf.regs[3] = 32'h0a;
+        u_dut.u_rf.regs[2] = 32'h10;
+        u_dut.u_rf.regs[3] = 32'h0a;
 
         // ALU valid
         ifu_exu_alu_vld_d = 1;
@@ -663,8 +689,8 @@ module top_tb;
         ifu_exu_rd_d = 1;      // $r1
         ifu_exu_wen_d = 1;
         
-	u_dut.u_rf.regs[2] = 32'h10;
-	u_dut.u_rf.regs[3] = 32'h0a;
+        u_dut.u_rf.regs[2] = 32'h10;
+        u_dut.u_rf.regs[3] = 32'h0a;
 
         // ALU valid
         ifu_exu_alu_vld_d = 1;
@@ -777,7 +803,7 @@ module top_tb;
         ifu_exu_bru_offset_d = 32'h0;
         
 
-	// Second Instruction
+        // Second Instruction
 
         // Setup ADD instruction: add.w $r1, $r2, $r3
         ifu_exu_vld_d = 1;
@@ -787,8 +813,8 @@ module top_tb;
         ifu_exu_rd_d = 1;      // $r1
         ifu_exu_wen_d = 1;
         
-	u_dut.u_rf.regs[2] = 32'h10;
-	u_dut.u_rf.regs[3] = 32'h0a;
+        u_dut.u_rf.regs[2] = 32'h10;
+        u_dut.u_rf.regs[3] = 32'h0a;
 
         // ALU valid
         ifu_exu_alu_vld_d = 1;
@@ -958,7 +984,7 @@ module top_tb;
         //             rd_w, wen_w, rd_data_w);
         //    passed = 0;
         //end
-	
+    
         if (u_dut.u_rf.regs[10] === 32'h30) begin
             $display("PASS: First ADD instruction completed: $r10 = 0x%h, other ADD instructions at 0x1C000008 and 0x1C00000C are flushed", u_dut.u_rf.regs[10]);
         end else begin
@@ -1140,7 +1166,7 @@ module top_tb;
         // Stop instruction stream
         init_inputs();
 
-	//// response to LSU ld instruction
+        //// response to LSU ld instruction
         //if (lsu_biu_rd_req) begin
         //    $display("Note: Cancelling pending LSU request due to ERTN flush");
         //    // Simulate BIU acknowledging but data won't be used
@@ -1150,16 +1176,16 @@ module top_tb;
         //    biu_lsu_rd_ack = 0;
         //end
 
-	//// Wait for several cycles to send data
+        //// Wait for several cycles to send data
         //wait_cycles(5);
 
-	//biu_lsu_data_vld = 1;
-	//biu_lsu_data = 64'haaaa1234bbbb1234;
+        //biu_lsu_data_vld = 1;
+        //biu_lsu_data = 64'haaaa1234bbbb1234;
 
         //wait_cycles(1);
-	//
-	//biu_lsu_data_vld = 0;
-	//biu_lsu_data = 64'h0;
+        //
+        //biu_lsu_data_vld = 0;
+        //biu_lsu_data = 64'h0;
 
         // Check results
         passed = 1;
@@ -1736,7 +1762,7 @@ module top_tb;
                 end else begin
                     $display("ERROR: CSR readback value differs");
                     $display("  Written: 0x%h, Read: 0x%h", test_value, rd_data_w);
-		    passed = 0;
+                    passed = 0;
                 end
                 
                 // Exit the loop
@@ -1777,14 +1803,14 @@ module top_tb;
         // Initialize
         init_inputs();
         
-	// Test value to write
+        // Test value to write
         test_value = 32'hDEAD_BEEF;
 
         // Test CSR operations mixed with other instructions
         $display("Testing CSR ops in pipeline with ALU instructions");
         
         // Cycle 0: CSWR instruction
-	// Setup CSRWR instruction
+        // Setup CSRWR instruction
         ifu_exu_vld_d = 1;
         ifu_exu_pc_d = 32'h1C00_6200;
         ifu_exu_rs2_d = 20;            // Source register $r20
@@ -1800,8 +1826,6 @@ module top_tb;
         ifu_exu_csr_xchg_d = 0;        // Exchange (write new, read old) CSRWR xchg 0
         ifu_exu_csr_wen_d = 1;         // Write enabled
         ifu_exu_csr_waddr_d = 14'h6;   // Write to CSR 0x6
-
-
         
         // Set ALU operands for next instruction
         u_dut.u_rf.regs[1] = 32'h100;
@@ -1868,7 +1892,7 @@ module top_tb;
         if (u_dut.u_rf.regs[21] !== 32'h300) begin
             $display("ERROR: ALU result not in register file");
             $display("  Expected 0x300, got 0x%h", u_dut.u_rf.regs[21]);
-	    passed = 0;
+            passed = 0;
         end else begin
             $display("ALU instruction executes correctly");
         end
@@ -1879,7 +1903,7 @@ module top_tb;
         end else begin
             $display("ERROR: CSR readback value differs");
             $display("  Written: 0x%h, Read: 0x%h", test_value, rd_data_w);
-	    passed = 0;
+            passed = 0;
         end
         
         // Restore inputs
@@ -1917,7 +1941,7 @@ module top_tb;
         test_alu_add_instruction();
         test_bru_branch_instruction();
       
-	// Add ERTN flush tests
+        // Add ERTN flush tests
         test_ertn_flush_instruction();
         test_ertn_complex_flush();
         
@@ -1926,11 +1950,11 @@ module top_tb;
         test_jirl_zero_offset();
         test_jirl_negative_offset();
 
-	// Add CSR tests
+        // Add CSR tests
         test_csrrd_instruction();
         test_csrwr_instruction();
         test_csr_pipeline_interaction();
-	
+        
         // Add more test cases here...
         
         // Print test statistics
