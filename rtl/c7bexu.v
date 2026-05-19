@@ -287,7 +287,6 @@ module c7bexu (
    wire lsu_except_ale_m;
    wire [31:0] lsu_except_ale_badv_ls1;
    wire [31:0] lsu_except_ale_badv_m;
-   //wire [31:0] lsu_except_badv_w;
    wire lsu_except_buserr_ls3;
    wire [31:0] lsu_except_buserr_badv_ls3;
    wire lsu_except_ecc_ls3;
@@ -488,13 +487,9 @@ module c7bexu (
       .csr_eentry                      (csr_isr_addr),
       .csr_era                         (csr_ert_addr),
 
-      //.ecl_csr_badv_w                  (lsu_except_badv_w), 
-      //.ecl_csr_badv_w                  (lsu_except_buserr_ls3 ? lsu_except_badv_ls3 : lsu_except_badv_w), 
-      .ecl_csr_badv_w                  (lsu_except_buserr_ls3 ? lsu_except_buserr_badv_ls3 : exc_badv_w), 
-      //.exu_ifu_except                  (exc_vld_w),
-      .exu_ifu_except                  (exc_vld_w | lsu_except_buserr_ls3),
-      //.ecl_csr_exccode_w               (exc_code_w),
-      .ecl_csr_exccode_w               (lsu_except_buserr_ls3? `EXC_ADEM : exc_code_w),
+      .ecl_csr_badv_w                  (exc_badv_w), 
+      .exu_ifu_except                  (exc_vld_w),
+      .ecl_csr_exccode_w               (exc_code_w),
       .ifu_exu_pc_w                    (pc_w),
       .ecl_csr_ertn_w                  (ertn_vld_w),
 
@@ -643,20 +638,37 @@ module c7bexu (
       .clk (clk),
       .q   (exc_badv_m));
 
+
+   //
+   // Exception valid, code, and BADV merging
+   //
+   // Note: The registers exc_vld_w, exc_code_w, and exc_badv_w are not
+   //       required to hold their values across multiple cycles, because:
+   //       Any exception that occurs before lsu_except_buserr_ls3 will
+   //       either block the LSU request or terminate the LSU process 
+   //       immediately (e.g., ALE exception).
+   //
+   wire exc_vld_merge_m = exc_vld_m | lsu_except_ale_m | lsu_except_buserr_ls3;
+
    dff_ns #(1) exc_vld_w_reg (
-      .din (exc_vld_m | lsu_except_ale_m),
+      .din (exc_vld_merge_m),
       .clk (clk),
       .q   (exc_vld_w));
 
+
+   wire [5:0] exc_code_merge_m = lsu_except_buserr_ls3 ? 6'h08 :  // EXC_ADEF/EXC_ADEM
+                                 lsu_except_ale_m      ? 6'h09 :  // EXC_ALE
+	                                                 exc_code_m;
    dff_ns #(6) exc_code_w_reg (
-      //.din (exc_code_m | ({6{lsu_except_ale_m}} & 6'h09) ), // EXC_ALE
-      .din (lsu_except_ale_m ? 6'h09 : exc_code_m), // EXC_ALE
+      .din (exc_code_merge_m),
       .clk (clk),
       .q   (exc_code_w));
 
+   wire [31:0] exc_badv_merge_m = lsu_except_buserr_ls3 ? lsu_except_buserr_badv_ls3 :
+                                  lsu_except_ale_m      ? lsu_except_ale_badv_m :
+	                                                  exc_badv_m;
    dff_ns #(32) exc_badv_w_reg (
-      //.din (exc_badv_m | ({32{lsu_except_ale_m}} & lsu_except_ale_badv_m)),
-      .din (lsu_except_ale_m ? lsu_except_ale_badv_m : exc_badv_m),
+      .din (exc_badv_merge_m),
       .clk (clk),
       .q   (exc_badv_w));
 
@@ -737,7 +749,7 @@ module c7bexu (
       .q   (wen_m));
 
    dffrle_ns #(1) wen_w_reg (
-      .din (wen_m & ~exc_vld_m & ~lsu_except_ale_m), // only when no exception
+      .din (wen_m & ~exc_vld_merge_m), // only when no exception
       .clk (clk),
       .en  (reg_en_m),
       .rst_l (resetn),
@@ -825,10 +837,6 @@ module c7bexu (
       .clk (clk),
       .q   (lsu_except_ale_badv_m));
 
-//   dff_ns #(32) lsu_except_badv_w_reg (
-//      .din (lsu_except_badv_m),
-//      .clk (clk),
-//      .q   (lsu_except_badv_w));
 
    // bru
    dff_ns #(1) bru_vld_e_reg (
