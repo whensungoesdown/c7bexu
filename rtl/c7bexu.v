@@ -67,6 +67,7 @@ module c7bexu (
    // exc
    input              ifu_exu_exc_vld_d,
    input  [5:0]       ifu_exu_exc_code_d,
+   input  [31:0]      ifu_exu_exc_badv_d,
 
    // memory interface  E M
    output             lsu_biu_rd_req,
@@ -75,6 +76,8 @@ module c7bexu (
    input              biu_lsu_rd_ack,
    input              biu_lsu_data_vld,
    input  [63:0]      biu_lsu_data,
+   input              biu_lsu_fault,
+   input  [1:0]       biu_lsu_fault_code,
 
    output             lsu_biu_wr_req,
    output [31:0]      lsu_biu_wr_addr,
@@ -83,6 +86,8 @@ module c7bexu (
 
    input              biu_lsu_wr_ack,
    input              biu_lsu_wr_fin,
+   input              biu_lsu_wr_fault,
+   input  [1:0]       biu_lsu_wr_fault_code,
 
    output             csr_ifu_ic_en,
    output             csr_ifu_ic_en_pls 
@@ -163,6 +168,9 @@ module c7bexu (
    wire [5:0] exc_code_m;
    wire [5:0] exc_code_w;
 
+   wire [31:0] exc_badv_e;
+   wire [31:0] exc_badv_m;
+   wire [31:0] exc_badv_w;
 
    //
    wire [31:0] dumb_rdata1_0;
@@ -277,10 +285,11 @@ module c7bexu (
    wire lsu_wr_fin_ls3;
    wire lsu_except_ale_ls1;
    wire lsu_except_ale_m;
-   wire [31:0] lsu_except_badv_ls1;
-   wire [31:0] lsu_except_badv_m;
-   wire [31:0] lsu_except_badv_w;
+   wire [31:0] lsu_except_ale_badv_ls1;
+   wire [31:0] lsu_except_ale_badv_m;
+   //wire [31:0] lsu_except_badv_w;
    wire lsu_except_buserr_ls3;
+   wire [31:0] lsu_except_buserr_badv_ls3;
    wire lsu_except_ecc_ls3;
 
    assign lsu_base_e = rs1_data_byp_e;
@@ -301,9 +310,10 @@ module c7bexu (
       .lsu_ecl_data_ls3                (lsu_data_ls3),
       .lsu_ecl_wr_fin_ls3              (lsu_wr_fin_ls3),      
       .lsu_ecl_except_ale_ls1          (lsu_except_ale_ls1),
-      .lsu_ecl_except_badv_ls1         (lsu_except_badv_ls1),
+      .lsu_ecl_except_ale_badv_ls1     (lsu_except_ale_badv_ls1),
       .lsu_ecl_except_buserr_ls3       (lsu_except_buserr_ls3),
       .lsu_ecl_except_ecc_ls3          (lsu_except_ecc_ls3),
+      .lsu_ecl_except_buserr_badv_ls3  (lsu_except_buserr_badv_ls3),
 
       // BIU Interface
       .lsu_biu_rd_req_ls2              (lsu_biu_rd_req),
@@ -311,13 +321,17 @@ module c7bexu (
       .biu_lsu_rd_ack_ls2              (biu_lsu_rd_ack),
       .biu_lsu_data_valid_ls3          (biu_lsu_data_vld),
       .biu_lsu_data_ls3                (biu_lsu_data),
+      .biu_lsu_fault_ls3               (biu_lsu_fault),
+      .biu_lsu_fault_code_ls3          (biu_lsu_fault_code),
 
       .lsu_biu_wr_req_ls2              (lsu_biu_wr_req),
       .lsu_biu_wr_addr_ls2             (lsu_biu_wr_addr),
       .lsu_biu_wr_data_ls2             (lsu_biu_wr_data),
       .lsu_biu_wr_strb_ls2             (lsu_biu_wr_strb),
       .biu_lsu_wr_ack_ls2              (biu_lsu_wr_ack),
-      .biu_lsu_wr_fin_ls3              (biu_lsu_wr_fin)
+      .biu_lsu_wr_fin_ls3              (biu_lsu_wr_fin),
+      .biu_lsu_wr_fault_ls3            (biu_lsu_wr_fault),
+      .biu_lsu_wr_fault_code_ls3       (biu_lsu_wr_fault_code)
    );
 
 
@@ -450,6 +464,8 @@ module c7bexu (
    wire [31:0] csr_isr_addr;
    wire [31:0] csr_ert_addr;
 
+   //wire [31:0] csr_badv;
+
    assign csr_raddr_d = ifu_exu_csr_raddr_d;
    assign csr_rdtimel_d = ifu_exu_csr_rdtimel_d;
    assign csr_rdtimeh_d = ifu_exu_csr_rdtimeh_d;
@@ -472,9 +488,13 @@ module c7bexu (
       .csr_eentry                      (csr_isr_addr),
       .csr_era                         (csr_ert_addr),
 
-      .ecl_csr_badv_w                  (lsu_except_badv_w), 
-      .exu_ifu_except                  (exc_vld_w),
-      .ecl_csr_exccode_w               (exc_code_w),
+      //.ecl_csr_badv_w                  (lsu_except_badv_w), 
+      //.ecl_csr_badv_w                  (lsu_except_buserr_ls3 ? lsu_except_badv_ls3 : lsu_except_badv_w), 
+      .ecl_csr_badv_w                  (lsu_except_buserr_ls3 ? lsu_except_buserr_badv_ls3 : exc_badv_w), 
+      //.exu_ifu_except                  (exc_vld_w),
+      .exu_ifu_except                  (exc_vld_w | lsu_except_buserr_ls3),
+      //.ecl_csr_exccode_w               (exc_code_w),
+      .ecl_csr_exccode_w               (lsu_except_buserr_ls3? `EXC_ADEM : exc_code_w),
       .ifu_exu_pc_w                    (pc_w),
       .ecl_csr_ertn_w                  (ertn_vld_w),
 
@@ -599,6 +619,11 @@ module c7bexu (
       .din (intr_pulse ? 6'h00 : ifu_exu_exc_code_d), // EXC_INT 6'h00
       .clk (clk),
       .q   (exc_code_e));
+
+   dff_ns #(32) exc_badv_e_reg (
+      .din (ifu_exu_exc_badv_d),
+      .clk (clk),
+      .q   (exc_badv_e));
    
    // When an exception occurs, instruction issue to the functional units is
    // halted. The exception code is then propagated down the pipeline and
@@ -613,16 +638,27 @@ module c7bexu (
       .clk (clk),
       .q   (exc_code_m));
 
+   dff_ns #(32) exc_badv_m_reg (
+      .din (exc_badv_e),
+      .clk (clk),
+      .q   (exc_badv_m));
+
    dff_ns #(1) exc_vld_w_reg (
       .din (exc_vld_m | lsu_except_ale_m),
       .clk (clk),
       .q   (exc_vld_w));
 
    dff_ns #(6) exc_code_w_reg (
-      .din (exc_code_m | ({6{lsu_except_ale_m}} & 6'h09) ), // EXC_ALE
+      //.din (exc_code_m | ({6{lsu_except_ale_m}} & 6'h09) ), // EXC_ALE
+      .din (lsu_except_ale_m ? 6'h09 : exc_code_m), // EXC_ALE
       .clk (clk),
       .q   (exc_code_w));
 
+   dff_ns #(32) exc_badv_w_reg (
+      //.din (exc_badv_m | ({32{lsu_except_ale_m}} & lsu_except_ale_badv_m)),
+      .din (lsu_except_ale_m ? lsu_except_ale_badv_m : exc_badv_m),
+      .clk (clk),
+      .q   (exc_badv_w));
 
    //
    dff_ns #(32) pc_e_reg (
@@ -785,14 +821,14 @@ module c7bexu (
       .q   (lsu_except_ale_m));
 
    dff_ns #(32) lsu_except_badv_m_reg (
-      .din (lsu_except_badv_ls1),
+      .din (lsu_except_ale_badv_ls1),
       .clk (clk),
-      .q   (lsu_except_badv_m));
+      .q   (lsu_except_ale_badv_m));
 
-   dff_ns #(32) lsu_except_badv_w_reg (
-      .din (lsu_except_badv_m),
-      .clk (clk),
-      .q   (lsu_except_badv_w));
+//   dff_ns #(32) lsu_except_badv_w_reg (
+//      .din (lsu_except_badv_m),
+//      .clk (clk),
+//      .q   (lsu_except_badv_w));
 
    // bru
    dff_ns #(1) bru_vld_e_reg (
