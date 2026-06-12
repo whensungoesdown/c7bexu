@@ -41,6 +41,10 @@ reg csr_vld_e;
 reg div_vld_e;
 reg div_complete_m;
 
+// New signals for dbar/ibar (outputs from c7bexu_ecl)
+reg lsu_ecl_ibar_fin;
+reg lsu_ecl_dbar_fin;
+
 c7bexu_ecl dut (
     .clk(clk),
     .resetn(resetn),
@@ -54,7 +58,9 @@ c7bexu_ecl dut (
     .lsu_wr_fin_ls3(lsu_wr_fin_ls3),
     .csr_vld_e(csr_vld_e),
     .div_vld_e(div_vld_e),
-    .div_complete_m(div_complete_m)
+    .div_complete_m(div_complete_m),
+    .lsu_ecl_ibar_fin(lsu_ecl_ibar_fin),
+    .lsu_ecl_dbar_fin(lsu_ecl_dbar_fin)
 );
 
 // ===========================================
@@ -71,6 +77,8 @@ begin
     csr_vld_e = 0;
     div_vld_e = 0;
     div_complete_m = 0;
+    lsu_ecl_ibar_fin = 0;
+    lsu_ecl_dbar_fin = 0;
 end
 endtask
 

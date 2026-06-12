@@ -32,6 +32,8 @@ module c7bexu (
 
    // lsu
    input              ifu_exu_lsu_vld_d,
+   input              ifu_exu_lsu_ibar_d,
+   input              ifu_exu_lsu_dbar_d,
    input  [6:0]       ifu_exu_lsu_op_d, // LSU_CODE_BIT 7
    input              ifu_exu_lsu_double_read_d,
 
@@ -275,6 +277,8 @@ module c7bexu (
 
    // lsu
    wire lsu_vld_e;
+   wire lsu_ibar_e;
+   wire lsu_dbar_e;
    wire [6:0] lsu_op_e;
    wire lsu_double_read_e;
    wire [31:0] lsu_base_e;
@@ -291,6 +295,9 @@ module c7bexu (
    wire [31:0] lsu_except_buserr_badv_ls3;
    wire lsu_except_ecc_ls3;
 
+   wire lsu_ecl_ibar_fin;
+   wire lsu_ecl_dbar_fin;
+
    assign lsu_base_e = rs1_data_byp_e;
    assign lsu_offset_e = lsu_double_read_e ? rs2_data_byp_e: imm_shifted_e;
    assign lsu_wdata_e = rs2_data_byp_e;
@@ -301,6 +308,8 @@ module c7bexu (
       .resetn                          (resetn),
 
       .ecl_lsu_valid_e                 (lsu_vld_e),
+      .ecl_lsu_ibar_e                  (lsu_ibar_e),
+      .ecl_lsu_dbar_e                  (lsu_dbar_e),
       .ecl_lsu_op_e                    (lsu_op_e),
       .ecl_lsu_base_e                  (lsu_base_e),
       .ecl_lsu_offset_e                (lsu_offset_e),
@@ -313,6 +322,9 @@ module c7bexu (
       .lsu_ecl_except_buserr_ls3       (lsu_except_buserr_ls3),
       .lsu_ecl_except_ecc_ls3          (lsu_except_ecc_ls3),
       .lsu_ecl_except_buserr_badv_ls3  (lsu_except_buserr_badv_ls3),
+
+      .lsu_ecl_ibar_fin                (lsu_ecl_ibar_fin),
+      .lsu_ecl_dbar_fin                (lsu_ecl_dbar_fin),
 
       // BIU Interface
       .lsu_biu_rd_req_ls2              (lsu_biu_rd_req),
@@ -552,6 +564,9 @@ module c7bexu (
       .lsu_except_ecc_ls3              (lsu_except_ecc_ls3),
       .lsu_data_valid_ls3              (lsu_data_vld_ls3),
       .lsu_wr_fin_ls3                  (lsu_wr_fin_ls3),
+
+      .lsu_ecl_ibar_fin                (lsu_ecl_ibar_fin),
+      .lsu_ecl_dbar_fin                (lsu_ecl_dbar_fin),
 
       .csr_vld_e                       (csr_vld_e),  // stall two cycles will be engough
 
@@ -814,6 +829,16 @@ module c7bexu (
       .clk (clk),
       .rst_l (resetn),
       .q   (lsu_vld_e));
+
+   dff_ns #(1) lsu_ibar_e_reg (
+      .din (ifu_exu_lsu_ibar_d),
+      .clk (clk),
+      .q   (lsu_ibar_e));
+
+   dff_ns #(1) lsu_idbar_e_reg (
+      .din (ifu_exu_lsu_dbar_d),
+      .clk (clk),
+      .q   (lsu_dbar_e));
 
    dff_ns #(7) lsu_op_e_reg (
       .din (ifu_exu_lsu_op_d),

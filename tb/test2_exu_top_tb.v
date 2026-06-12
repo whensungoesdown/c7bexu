@@ -35,6 +35,8 @@ module top_tb;
     
     // LSU related
     reg              ifu_exu_lsu_vld_d;
+    reg              ifu_exu_lsu_ibar_d;    // NEW: ibar signal
+    reg              ifu_exu_lsu_dbar_d;    // NEW: dbar signal
     reg  [6:0]       ifu_exu_lsu_op_d;
     reg              ifu_exu_lsu_double_read_d;
     
@@ -153,6 +155,8 @@ module top_tb;
         .ifu_exu_alu_b_imm_d        (ifu_exu_alu_b_imm_d),
         
         .ifu_exu_lsu_vld_d          (ifu_exu_lsu_vld_d),
+        .ifu_exu_lsu_ibar_d         (ifu_exu_lsu_ibar_d),   // NEW
+        .ifu_exu_lsu_dbar_d         (ifu_exu_lsu_dbar_d),   // NEW
         .ifu_exu_lsu_op_d           (ifu_exu_lsu_op_d),
         .ifu_exu_lsu_double_read_d  (ifu_exu_lsu_double_read_d),
         
@@ -243,6 +247,8 @@ module top_tb;
         ifu_exu_alu_b_imm_d = 0;
         
         ifu_exu_lsu_vld_d = 0;
+        ifu_exu_lsu_ibar_d = 0;       // NEW: initialize to 0
+        ifu_exu_lsu_dbar_d = 0;       // NEW: initialize to 0
         ifu_exu_lsu_op_d = 0;
         ifu_exu_lsu_double_read_d = 0;
         
@@ -349,6 +355,8 @@ module top_tb;
         
         // LSU valid
         ifu_exu_lsu_vld_d = 1;
+        ifu_exu_lsu_ibar_d = 0;    // Ensure ibar=0
+        ifu_exu_lsu_dbar_d = 0;    // Ensure dbar=0
         ifu_exu_lsu_op_d = 7'b0000011;  // LD opcode LD_W
         ifu_exu_lsu_double_read_d = 0;
         
@@ -506,6 +514,8 @@ module top_tb;
         
         // LSU valid
         ifu_exu_lsu_vld_d = 1;
+        ifu_exu_lsu_ibar_d = 0;
+        ifu_exu_lsu_dbar_d = 0;
         ifu_exu_lsu_op_d = 7'b0000011;  // LD opcode LD_W
         ifu_exu_lsu_double_read_d = 0;
         
@@ -536,12 +546,6 @@ module top_tb;
         
         @(posedge clk);
 
-        //// Record stall status
-        //if (exu_ifu_stall) begin
-        //    stall_start_time = $time;
-        //    $display("Stall detected at time %0t", $time);
-        //end
-
         if (lsu_except_ale_ls1) begin
             $display("ALE detected at time %0t", $time);
         end
@@ -550,13 +554,6 @@ module top_tb;
         while (exu_ifu_stall) begin
             @(posedge clk);
         end
-        //wait_cycles(1);
-
-        //stall_end_time = $time;
-        //stall_cycles = (stall_end_time - stall_start_time) / 10;  // 10ns period
-        //
-        //$display("Stall lasted %0d cycles", stall_cycles);
-
         
         // Wait for instruction completion (reaching W stage)
         wait_cycles(2);
@@ -576,25 +573,11 @@ module top_tb;
             passed = 0;
         end
         
-        //// Check 3: rd_data_w should equal returned data
-        //if (rd_data_w !== expected_data) begin
-        //    $display("ERROR: rd_data_w is 0x%h, expected 0x%h", 
-        //             rd_data_w, expected_data);
-        //    passed = 0;
-        //end
-        
         // Check 4: pc_w should equal instruction PC
         if (pc_w !== 32'h1C00_0000) begin
             $display("ERROR: pc_w is 0x%h, expected 0x1C00_0000", pc_w);
             passed = 0;
         end
-        
-        // No stall when ALE happen
-        //// Check 5: Stall cycles should be reasonable (LSU typically needs multiple cycles)
-        //if (stall_cycles !== 1) begin
-        //    $display("ERROR: stall cycles should be 1 cycle when ALE happen");
-        //    passed = 0;
-        //end
         
         // Check 6: No exception should occur
         if (exu_ifu_except === 0) begin
@@ -657,9 +640,6 @@ module top_tb;
         ifu_exu_alu_b_imm_d = 0;
 
         @(posedge clk);
-        
-        
-
         
         repeat(2) @(posedge clk);
 
@@ -863,10 +843,8 @@ module top_tb;
         
         wait_cycles(2);
 
-        //if (u_dut.u_rf.regs[1] !== 32'h0) begin 
         if (wen_w !== 0) begin 
-            $display("ERROR: Seccond instruction not flushed, regs[1] 0x%h, wen_w 0x%h, expected 0x0",
-                     u_dut.u_rf.regs[1], wen_w);
+            $display("ERROR: Second instruction not flushed, wen_w 0x%h, expected 0x0", wen_w);
             passed = 0;
         end
 
@@ -976,93 +954,12 @@ module top_tb;
         // Check 2: First ADD instruction (before ERTN) should complete
         // Wait for it to reach W stage
         wait_cycles(5);
-
-        //if (rd_w === 10 && wen_w === 1 && rd_data_w === 32'h30) begin
-        //    $display("PASS: First ADD instruction completed: $r10 = 0x%h", rd_data_w);
-        //end else begin
-        //    $display("ERROR: First ADD instruction failed: rd_w=%0d, wen_w=%0d, data=0x%h",
-        //             rd_w, wen_w, rd_data_w);
-        //    passed = 0;
-        //end
     
         if (u_dut.u_rf.regs[10] === 32'h30) begin
             $display("PASS: First ADD instruction completed: $r10 = 0x%h, other ADD instructions at 0x1C000008 and 0x1C00000C are flushed", u_dut.u_rf.regs[10]);
         end else begin
             $display("ERROR: First ADD instruction failed");
             passed = 0;
-        end
-
-//        // Check 3: ADD instructions after ERTN should be flushed (not write back)
-//        // Monitor for several cycles to ensure they don't complete
-//        for (i = 0; i < 8; i = i + 1) begin
-//            @(posedge clk);
-//            if (rd_w === 11 || rd_w === 12) begin
-//                $display("ERROR: Flushed instruction completed (rd_w=%0d at cycle %0d)",
-//                         rd_w, i);
-//                passed = 0;
-//            end
-//        end
-//
-//        // Check 4: Register file should not be updated by flushed instructions
-//        if (u_dut.u_rf.regs[11] !== 32'h0) begin
-//            $display("ERROR: $r11 was updated to 0x%h, should remain 0x0",
-//                     u_dut.u_rf.regs[11]);
-//            passed = 0;
-//        end
-//
-//        if (u_dut.u_rf.regs[12] !== 32'h0) begin
-//            $display("ERROR: $r12 was updated to 0x%h, should remain 0x0",
-//                     u_dut.u_rf.regs[12]);
-//            passed = 0;
-//        end
-//
-//        // Check 5: IFU should be flushed (no new instructions fetched for some cycles)
-//        // This is harder to check without IFU interface, but we can monitor
-//        // the stall signal and instruction flow
-//
-//        // Check 6: After some cycles, new instructions should be fetchable
-//        // Send a new ADD instruction to verify pipeline recovered
-//        $display("\nStep 6: Testing pipeline recovery after ERTN");
-//        ifu_exu_vld_d = 1;
-//        ifu_exu_pc_d = 32'h1C00_0100;  // New PC after ERTN
-//        ifu_exu_rs1_d = 8;
-//        ifu_exu_rs2_d = 9;
-//        ifu_exu_rd_d = 13;      // $r13
-//        ifu_exu_wen_d = 1;
-//
-//        u_dut.u_rf.regs[8] = 32'h50;
-//        u_dut.u_rf.regs[9] = 32'h25;
-//
-//        ifu_exu_alu_vld_d = 1;
-//        ifu_exu_alu_op_d = 6'b000001;
-//
-//        @(posedge clk);
-//        init_inputs();
-//
-//        // Wait for this instruction to complete
-//        wait_cycles(4);
-//
-//        if (rd_w === 13 && wen_w === 1 && rd_data_w === 32'h75) begin
-//            $display("PASS: Pipeline recovered, new ADD completed: $r13 = 0x%h", rd_data_w);
-//        end else begin
-//            $display("ERROR: Pipeline recovery failed: rd_w=%0d, wen_w=%0d, data=0x%h",
-//                     rd_w, wen_w, rd_data_w);
-//            passed = 0;
-//        end
-//
-//        // Check 7: ERTN signal should be deasserted after completion
-//        wait_cycles(2);
-//        if (exu_ifu_ertn !== 0) begin
-//            $display("ERROR: ERTN signal still asserted");
-//            passed = 0;
-//        end
-
-        // Summary
-        $display("\nERTN Flush Test Summary:");
-        if (passed) begin
-            $display("All flush mechanisms working correctly");
-        end else begin
-            $display("Some flush mechanisms failed");
         end
 
         // Restore inputs
@@ -1128,6 +1025,8 @@ module top_tb;
         u_dut.u_rf.regs[3] = 32'h4000_0000;
         ifu_exu_alu_vld_d = 0;
         ifu_exu_lsu_vld_d = 1;
+        ifu_exu_lsu_ibar_d = 0;
+        ifu_exu_lsu_dbar_d = 0;
         ifu_exu_lsu_op_d = 7'b0000011;  // LD
 
         @(posedge clk);
@@ -1165,27 +1064,6 @@ module top_tb;
 
         // Stop instruction stream
         init_inputs();
-
-        //// response to LSU ld instruction
-        //if (lsu_biu_rd_req) begin
-        //    $display("Note: Cancelling pending LSU request due to ERTN flush");
-        //    // Simulate BIU acknowledging but data won't be used
-        //    @(posedge clk);
-        //    biu_lsu_rd_ack = 1;
-        //    @(posedge clk);
-        //    biu_lsu_rd_ack = 0;
-        //end
-
-        //// Wait for several cycles to send data
-        //wait_cycles(5);
-
-        //biu_lsu_data_vld = 1;
-        //biu_lsu_data = 64'haaaa1234bbbb1234;
-
-        //wait_cycles(1);
-        //
-        //biu_lsu_data_vld = 0;
-        //biu_lsu_data = 64'h0;
 
         // Check results
         passed = 1;

@@ -12,6 +12,9 @@ module c7bexu_ecl (
    input              lsu_data_valid_ls3,
    input              lsu_wr_fin_ls3,
 
+   input              lsu_ecl_ibar_fin,
+   input              lsu_ecl_dbar_fin,
+
    input              csr_vld_e,
 
    input              div_vld_e,
@@ -24,7 +27,8 @@ module c7bexu_ecl (
    wire lsu_stall_q;
 
    wire lsu_bgn = lsu_vld_e;
-   wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3;
+   //wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3;
+   wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3 | lsu_ecl_ibar_fin | lsu_ecl_dbar_fin;
 
    // lsu_bgn            : _-______
    // lsu_end            : ______-_
