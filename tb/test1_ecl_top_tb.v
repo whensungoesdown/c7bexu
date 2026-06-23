@@ -41,9 +41,10 @@ reg csr_vld_e;
 reg div_vld_e;
 reg div_complete_m;
 
-// New signals for dbar/ibar (outputs from c7bexu_ecl)
+// New signals for dbar/ibar/sc
 reg lsu_ecl_ibar_fin;
 reg lsu_ecl_dbar_fin;
+reg lsu_ecl_sc_fin;          // <-- NEW
 
 c7bexu_ecl dut (
     .clk(clk),
@@ -60,7 +61,8 @@ c7bexu_ecl dut (
     .div_vld_e(div_vld_e),
     .div_complete_m(div_complete_m),
     .lsu_ecl_ibar_fin(lsu_ecl_ibar_fin),
-    .lsu_ecl_dbar_fin(lsu_ecl_dbar_fin)
+    .lsu_ecl_dbar_fin(lsu_ecl_dbar_fin),
+    .lsu_ecl_sc_fin(lsu_ecl_sc_fin)   // <-- NEW
 );
 
 // ===========================================
@@ -79,6 +81,7 @@ begin
     div_complete_m = 0;
     lsu_ecl_ibar_fin = 0;
     lsu_ecl_dbar_fin = 0;
+    lsu_ecl_sc_fin = 0;          // <-- NEW
 end
 endtask
 
@@ -204,6 +207,32 @@ end
 endtask
 
 // ===========================================
+// Test Case 6: LSU SC Completion Ends Stall
+// ===========================================
+task test_lsu_sc_fin_end;
+begin
+    $display("[%0t] Test 6: LSU SC finish ends stall_ifu", $time);
+    test_count = test_count + 1;
+    init_signals;
+    @(posedge clk);
+    lsu_vld_e = 1;
+    @(posedge clk);
+    lsu_vld_e = 0;
+    lsu_ecl_sc_fin = 1;
+    @(posedge clk);
+    lsu_ecl_sc_fin = 0;
+    #10;
+    if (stall_ifu === 1'b0) begin
+        $display("Test 6: LSU SC finish end stall_ifu  -> PASS");
+        pass_count = pass_count + 1;
+    end else begin
+        $display("Test 6: LSU SC finish end stall_ifu  -> FAIL: stall_ifu should be 0 after SC finish");
+        fail_count = fail_count + 1;
+    end
+end
+endtask
+
+// ===========================================
 // Main Test Sequence
 // ===========================================
 initial begin
@@ -219,6 +248,7 @@ initial begin
     test_lsu_start_stall_ifu;
     test_lsu_except_ale;
     test_lsu_normal_end;
+    test_lsu_sc_fin_end;   // <-- NEW test case
 
     // Display test summary
     #10;

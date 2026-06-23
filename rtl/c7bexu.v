@@ -297,6 +297,12 @@ module c7bexu (
 
    wire lsu_ecl_ibar_fin;
    wire lsu_ecl_dbar_fin;
+   wire lsu_ecl_sc_fin_ls1; // equals to _e
+   wire lsu_sc_fin_m;
+
+   wire lsu_csr_llb_set;
+   wire lsu_csr_llb_clr;
+   wire csr_lsu_llb;
 
    assign lsu_base_e = rs1_data_byp_e;
    assign lsu_offset_e = lsu_double_read_e ? rs2_data_byp_e: imm_shifted_e;
@@ -325,6 +331,12 @@ module c7bexu (
 
       .lsu_ecl_ibar_fin                (lsu_ecl_ibar_fin),
       .lsu_ecl_dbar_fin                (lsu_ecl_dbar_fin),
+      .lsu_ecl_sc_fin_ls1              (lsu_ecl_sc_fin_ls1),
+
+      .lsu_csr_llb_set                 (lsu_csr_llb_set),
+      .lsu_csr_llb_clr                 (lsu_csr_llb_clr),
+
+      .csr_lsu_llb                     (csr_lsu_llb),
 
       // BIU Interface
       .lsu_biu_rd_req_ls2              (lsu_biu_rd_req),
@@ -504,7 +516,10 @@ module c7bexu (
       .ecl_csr_exccode_w               (exc_code_w),
       .ifu_exu_pc_w                    (pc_w),
       .ecl_csr_ertn_w                  (ertn_vld_w),
+      .lsu_csr_llb_set                 (lsu_csr_llb_set),
+      .lsu_csr_llb_clr                 (lsu_csr_llb_clr),
 
+      .csr_lsu_llb                     (csr_lsu_llb),
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
       .csr_ifu_ic_en                   (csr_ifu_ic_en), 
       .csr_ifu_ic_en_pls               (csr_ifu_ic_en_pls), 
@@ -521,7 +536,8 @@ module c7bexu (
                       ({32{mul_vld_m}}               & mul_res_m) |
                       ({32{csr_vld_m}}               & csr_rdata_m) |
                       ({32{div_vld_m &  div_mod_m}}  & div_r_m) |
-                      ({32{div_vld_m & ~div_mod_m}}  & div_s_m);
+                      ({32{div_vld_m & ~div_mod_m}}  & div_s_m) |
+		      ({32{lsu_sc_fin_m}}            & {31'b0, csr_lsu_llb});
 
    // This circuit implementation is prioritized.
    //assign rd_data_m = alu_vld_m                     ? alu_res_m :
@@ -567,6 +583,7 @@ module c7bexu (
 
       .lsu_ecl_ibar_fin                (lsu_ecl_ibar_fin),
       .lsu_ecl_dbar_fin                (lsu_ecl_dbar_fin),
+      .lsu_ecl_sc_fin                  (lsu_ecl_sc_fin_ls1),
 
       .csr_vld_e                       (csr_vld_e),  // stall two cycles will be engough
 
@@ -850,7 +867,7 @@ module c7bexu (
       .clk (clk),
       .q   (lsu_double_read_e));
 
-   // m equvalent to ls1, for lsu instructions that raise ale, lsu will not stall 
+   // e equvalent to ls1, for lsu instructions that raise ale, lsu will not stall 
    dff_ns #(1) lsu_except_ale_m_reg (
       .din (lsu_except_ale_ls1),
       .clk (clk),
@@ -862,6 +879,11 @@ module c7bexu (
       .clk (clk),
       .q   (lsu_except_ale_badv_m));
 
+   // _ls1 = _e 
+   dff_ns #(1) lsu_sc_fin_m_reg (
+      .din (lsu_ecl_sc_fin_ls1),
+      .clk (clk),
+      .q   (lsu_sc_fin_m));
 
    // bru
    dff_ns #(1) bru_vld_e_reg (

@@ -35,8 +35,8 @@ module top_tb;
     
     // LSU related
     reg              ifu_exu_lsu_vld_d;
-    reg              ifu_exu_lsu_ibar_d;    // NEW: ibar signal
-    reg              ifu_exu_lsu_dbar_d;    // NEW: dbar signal
+    reg              ifu_exu_lsu_ibar_d;
+    reg              ifu_exu_lsu_dbar_d;
     reg  [6:0]       ifu_exu_lsu_op_d;
     reg              ifu_exu_lsu_double_read_d;
     
@@ -113,6 +113,9 @@ module top_tb;
     wire             lsu_except_buserr_ls3;
     wire             lsu_except_ecc_ls3;
     
+    // Extra signal for LL/SC (observable from DUT)
+    wire csr_lsu_llb = u_dut.csr_lsu_llb;
+    
     // Test statistics
     integer test_count = 0;
     integer pass_count = 0;
@@ -155,8 +158,8 @@ module top_tb;
         .ifu_exu_alu_b_imm_d        (ifu_exu_alu_b_imm_d),
         
         .ifu_exu_lsu_vld_d          (ifu_exu_lsu_vld_d),
-        .ifu_exu_lsu_ibar_d         (ifu_exu_lsu_ibar_d),   // NEW
-        .ifu_exu_lsu_dbar_d         (ifu_exu_lsu_dbar_d),   // NEW
+        .ifu_exu_lsu_ibar_d         (ifu_exu_lsu_ibar_d),
+        .ifu_exu_lsu_dbar_d         (ifu_exu_lsu_dbar_d),
         .ifu_exu_lsu_op_d           (ifu_exu_lsu_op_d),
         .ifu_exu_lsu_double_read_d  (ifu_exu_lsu_double_read_d),
         
@@ -247,8 +250,8 @@ module top_tb;
         ifu_exu_alu_b_imm_d = 0;
         
         ifu_exu_lsu_vld_d = 0;
-        ifu_exu_lsu_ibar_d = 0;       // NEW: initialize to 0
-        ifu_exu_lsu_dbar_d = 0;       // NEW: initialize to 0
+        ifu_exu_lsu_ibar_d = 0;
+        ifu_exu_lsu_dbar_d = 0;
         ifu_exu_lsu_op_d = 0;
         ifu_exu_lsu_double_read_d = 0;
         
@@ -328,6 +331,10 @@ module top_tb;
     end
     endtask
     
+    // ============================================================
+    // Existing test tasks (kept as originally provided)
+    // ============================================================
+    
     // Task: LD Instruction Test
     task test_ld_instruction;
         reg [31:0] expected_addr;
@@ -355,8 +362,8 @@ module top_tb;
         
         // LSU valid
         ifu_exu_lsu_vld_d = 1;
-        ifu_exu_lsu_ibar_d = 0;    // Ensure ibar=0
-        ifu_exu_lsu_dbar_d = 0;    // Ensure dbar=0
+        ifu_exu_lsu_ibar_d = 0;
+        ifu_exu_lsu_dbar_d = 0;
         ifu_exu_lsu_op_d = 7'b0000011;  // LD opcode LD_W
         ifu_exu_lsu_double_read_d = 0;
         
@@ -1796,44 +1803,36 @@ module top_tb;
     end
     endtask
 
+
+    // ============================================================
     // Main test flow
+    // ============================================================
     initial begin
         // Initialize
         clk = 0;
         ext_intr = 1'b0;
         init_inputs();
         
-        // Wait for some time
-        //#10;
-        
         // Reset system
         reset_system();
         
         $display("\n========================================");
-        $display("Starting c7bexu Testbench");
+        $display("Starting c7bexu Testbench (with LL/SC support)");
         $display("========================================\n");
         
-        // Run test cases
+        // Run existing test cases
         test_ld_instruction();
         test_ld_instruction_ale();
         test_alu_add_instruction();
         test_bru_branch_instruction();
-      
-        // Add ERTN flush tests
         test_ertn_flush_instruction();
         test_ertn_complex_flush();
-        
-        // Add JIRL tests
         test_jirl_instruction();
         test_jirl_zero_offset();
         test_jirl_negative_offset();
-
-        // Add CSR tests
         test_csrrd_instruction();
         test_csrwr_instruction();
         test_csr_pipeline_interaction();
-        
-        // Add more test cases here...
         
         // Print test statistics
         $display("\n========================================");
@@ -1882,8 +1881,8 @@ module top_tb;
     
     // Monitor key signal changes
     initial begin
-        $monitor("Time %0t: clk=%b, resetn=%b, stall=%b, ertn=%b, pc_w=0x%h, wen_w=%d rd_w=%0d, rd_data_w=0x%h",
-                 $time, clk, resetn, exu_ifu_stall, exu_ifu_ertn, pc_w, wen_w, rd_w, rd_data_w);
+        $monitor("Time %0t: clk=%b, resetn=%b, stall=%b, ertn=%b, pc_w=0x%h, wen_w=%d rd_w=%0d, rd_data_w=0x%h, csr_lsu_llb=%b",
+                 $time, clk, resetn, exu_ifu_stall, exu_ifu_ertn, pc_w, wen_w, rd_w, rd_data_w, csr_lsu_llb);
     end
     
     // Waveform file generation
