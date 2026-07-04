@@ -300,6 +300,7 @@ module c7bexu (
    wire lsu_ecl_sc_fin_ls1; // equals to _e
    wire lsu_sc_fin_m;
 
+   wire lsu_sc;
    wire lsu_csr_llb_set;
    wire lsu_csr_llb_clr;
    wire csr_lsu_llb;
@@ -333,6 +334,7 @@ module c7bexu (
       .lsu_ecl_dbar_fin                (lsu_ecl_dbar_fin),
       .lsu_ecl_sc_fin_ls1              (lsu_ecl_sc_fin_ls1),
 
+      .lsu_sc                          (lsu_sc),
       .lsu_csr_llb_set                 (lsu_csr_llb_set),
       .lsu_csr_llb_clr                 (lsu_csr_llb_clr),
 
@@ -537,7 +539,8 @@ module c7bexu (
                       ({32{csr_vld_m}}               & csr_rdata_m) |
                       ({32{div_vld_m &  div_mod_m}}  & div_r_m) |
                       ({32{div_vld_m & ~div_mod_m}}  & div_s_m) |
-		      ({32{lsu_sc_fin_m}}            & {31'b0, csr_lsu_llb});
+		      ({32{lsu_sc_fin_m}}            & 32'b0) |   // {31'b0, csr_lsu_llb}
+		      ({32{lsu_wr_fin_ls3 & lsu_sc}} & 32'b1);
 
    // This circuit implementation is prioritized.
    //assign rd_data_m = alu_vld_m                     ? alu_res_m :
