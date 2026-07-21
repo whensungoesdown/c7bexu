@@ -96,6 +96,14 @@ module top_tb;
     wire             csr_ifu_ic_en;
     wire             csr_ifu_ic_en_pls;
     
+    // *** NEW: CSR DA/PG and DMW signals (DUT outputs) ***
+    wire             csr_ifu_crmd_da;
+    wire             csr_ifu_crmd_pg;
+    wire [2:0]       csr_ifu_dmw0_pseg;
+    wire [2:0]       csr_ifu_dmw0_vseg;
+    wire [2:0]       csr_ifu_dmw1_pseg;
+    wire [2:0]       csr_ifu_dmw1_vseg;
+    
     // Internal signals for monitoring
     wire [31:0]      rs1_data_d;
     wire [31:0]      rs2_data_d;
@@ -211,7 +219,15 @@ module top_tb;
         .biu_lsu_wr_fault_code      (biu_lsu_wr_fault_code),
         
         .csr_ifu_ic_en              (csr_ifu_ic_en),
-        .csr_ifu_ic_en_pls          (csr_ifu_ic_en_pls)
+        .csr_ifu_ic_en_pls          (csr_ifu_ic_en_pls),
+        
+        // *** NEW connections ***
+        .csr_ifu_crmd_da            (csr_ifu_crmd_da),
+        .csr_ifu_crmd_pg            (csr_ifu_crmd_pg),
+        .csr_ifu_dmw0_pseg          (csr_ifu_dmw0_pseg),
+        .csr_ifu_dmw0_vseg          (csr_ifu_dmw0_vseg),
+        .csr_ifu_dmw1_pseg          (csr_ifu_dmw1_pseg),
+        .csr_ifu_dmw1_vseg          (csr_ifu_dmw1_vseg)
     );
     
     // Connect internal signals (through hierarchical reference)

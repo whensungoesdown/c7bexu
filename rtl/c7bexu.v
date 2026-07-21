@@ -92,7 +92,15 @@ module c7bexu (
    input  [1:0]       biu_lsu_wr_fault_code,
 
    output             csr_ifu_ic_en,
-   output             csr_ifu_ic_en_pls 
+   output             csr_ifu_ic_en_pls,
+
+   output             csr_ifu_crmd_da, 
+   output             csr_ifu_crmd_pg,
+
+   output [2:0]       csr_ifu_dmw0_pseg,
+   output [2:0]       csr_ifu_dmw0_vseg,
+   output [2:0]       csr_ifu_dmw1_pseg,
+   output [2:0]       csr_ifu_dmw1_vseg
 );
 
 // Debug Code
@@ -130,6 +138,13 @@ module c7bexu (
    wire ext_intr_pulse;
    wire csr_timer_intr;
    wire csr_crmd_ie;
+
+   wire csr_crmd_da;
+   wire csr_crmd_pg;
+   wire [2:0] csr_dmw0_pseg;
+   wire [2:0] csr_dmw0_vseg;
+   wire [2:0] csr_dmw1_pseg;
+   wire [2:0] csr_dmw1_vseg;
 
 
 
@@ -488,6 +503,7 @@ module c7bexu (
    wire [31:0] csr_mask_m;
    wire [31:0] csr_isr_addr;
    wire [31:0] csr_ert_addr;
+   wire [31:0] csr_tlbr_addr;
 
    //wire [31:0] csr_badv;
 
@@ -512,6 +528,7 @@ module c7bexu (
 
       .csr_eentry                      (csr_isr_addr),
       .csr_era                         (csr_ert_addr),
+      .csr_tlbrentry                   (csr_tlbr_addr),
 
       .ecl_csr_badv_w                  (exc_badv_w), 
       .exu_ifu_except                  (exc_vld_w),
@@ -523,6 +540,12 @@ module c7bexu (
 
       .csr_lsu_llb                     (csr_lsu_llb),
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
+      .csr_crmd_da                     (csr_crmd_da),
+      .csr_crmd_pg                     (csr_crmd_pg),
+      .csr_dmw0_pseg                   (csr_dmw0_pseg), 
+      .csr_dmw0_vseg                   (csr_dmw0_vseg), 
+      .csr_dmw1_pseg                   (csr_dmw1_pseg), 
+      .csr_dmw1_vseg                   (csr_dmw1_vseg), 
       .csr_ifu_ic_en                   (csr_ifu_ic_en), 
       .csr_ifu_ic_en_pls               (csr_ifu_ic_en_pls), 
       .csr_ecl_timer_intr              (csr_timer_intr),
@@ -531,6 +554,13 @@ module c7bexu (
       //.ext_intr_sync                   (pic_csr_ext_intr)
    );
 
+   assign csr_ifu_crmd_da = csr_crmd_da;
+   assign csr_ifu_crmd_pg = csr_crmd_pg;
+
+   assign csr_ifu_dmw0_pseg = csr_dmw0_pseg;
+   assign csr_ifu_dmw0_vseg = csr_dmw0_vseg;
+   assign csr_ifu_dmw1_pseg = csr_dmw1_pseg;
+   assign csr_ifu_dmw1_vseg = csr_dmw1_vseg;
 
    assign rd_data_m = ({32{alu_vld_m}}               & alu_res_m) |
                       ({32{lsu_data_vld_ls3}}        & lsu_data_ls3) |
@@ -554,7 +584,9 @@ module c7bexu (
    assign exu_ifu_brn_addr = bru_brn_addr_w;
 
    assign exu_ifu_except = exc_vld_w;
-   assign exu_ifu_isr_addr = csr_isr_addr;
+   //assign exu_ifu_isr_addr = csr_isr_addr;
+   //                                       `EXC_TLBR
+   assign exu_ifu_isr_addr = (exc_code_w == 6'h3f) ? csr_tlbr_addr : csr_isr_addr;
 
    assign exu_ifu_ertn = ertn_vld_w;
    assign exu_ifu_ert_addr = csr_ert_addr;
