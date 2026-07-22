@@ -24,4 +24,5 @@ ${PROJECT_ROOT}/../div.v
 
 -f ${PROJECT_ROOT}/../c7blsu/flist/c7blsu.flist
 -f ${PROJECT_ROOT}/../c7bcsr/flist/c7bcsr.flist
+-f ${PROJECT_ROOT}/../c7btlb/flist/c7btlb.flist
 

@@ -371,7 +371,15 @@ module c7bexu (
       .biu_lsu_wr_ack_ls2              (biu_lsu_wr_ack),
       .biu_lsu_wr_fin_ls3              (biu_lsu_wr_fin),
       .biu_lsu_wr_fault_ls3            (biu_lsu_wr_fault),
-      .biu_lsu_wr_fault_code_ls3       (biu_lsu_wr_fault_code)
+      .biu_lsu_wr_fault_code_ls3       (biu_lsu_wr_fault_code),
+
+      .csr_lsu_crmd_da                 (csr_crmd_da),
+      .csr_lsu_crmd_pg                 (csr_crmd_pg),
+
+      .csr_lsu_dmw0_pseg               (csr_dmw0_pseg),
+      .csr_lsu_dmw0_vseg               (csr_dmw0_vseg),
+      .csr_lsu_dmw1_pseg               (csr_dmw1_pseg),
+      .csr_lsu_dmw1_vseg               (csr_dmw1_vseg)
    );
 
 
