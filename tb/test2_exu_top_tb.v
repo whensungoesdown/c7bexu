@@ -74,6 +74,10 @@ module top_tb;
     reg  [5:0]       ifu_exu_exc_code_d;
     reg  [31:0]      ifu_exu_exc_badv_d;
     
+    // TLB input ports
+    reg              ifu_exu_tlb_vld_d;
+    reg  [3:0]       ifu_exu_tlb_op_d;
+    
     // BIU interface
     wire             lsu_biu_rd_req;
     wire [31:0]      lsu_biu_rd_addr;
@@ -95,14 +99,33 @@ module top_tb;
     // CSR outputs to IFU
     wire             csr_ifu_ic_en;
     wire             csr_ifu_ic_en_pls;
-    
-    // *** NEW: CSR DA/PG and DMW signals (DUT outputs) ***
     wire             csr_ifu_crmd_da;
     wire             csr_ifu_crmd_pg;
     wire [2:0]       csr_ifu_dmw0_pseg;
     wire [2:0]       csr_ifu_dmw0_vseg;
     wire [2:0]       csr_ifu_dmw1_pseg;
     wire [2:0]       csr_ifu_dmw1_vseg;
+    
+    // TLB output ports from DUT
+    wire [18:0]      csr_itlb_tlbehi_vppn;
+    wire             csr_itlb_tlbidx_ne;
+    wire [5:0]       csr_itlb_tlbidx_ps;
+    wire [4:0]       csr_itlb_tlbidx_index;
+    wire [19:0]      csr_itlb_tlbelo0_ppn;
+    wire             csr_itlb_tlbelo0_g;
+    wire [1:0]       csr_itlb_tlbelo0_mat;
+    wire [1:0]       csr_itlb_tlbelo0_plv;
+    wire             csr_itlb_tlbelo0_d;
+    wire             csr_itlb_tlbelo0_v;
+    wire [19:0]      csr_itlb_tlbelo1_ppn;
+    wire             csr_itlb_tlbelo1_g;
+    wire [1:0]       csr_itlb_tlbelo1_mat;
+    wire [1:0]       csr_itlb_tlbelo1_plv;
+    wire             csr_itlb_tlbelo1_d;
+    wire             csr_itlb_tlbelo1_v;
+    wire             csr_itlb_tlbrefill_ctx;
+    wire [4:0]       exu_itlb_random_index;
+    wire             csr_itlb_tlbfill_vld_e;
     
     // Internal signals for monitoring
     wire [31:0]      rs1_data_d;
@@ -195,6 +218,10 @@ module top_tb;
         
         .ifu_exu_ertn_vld_d         (ifu_exu_ertn_vld_d),
         
+        // TLB inputs
+        .ifu_exu_tlb_vld_d          (ifu_exu_tlb_vld_d),
+        .ifu_exu_tlb_op_d           (ifu_exu_tlb_op_d),
+        
         .ifu_exu_exc_vld_d          (ifu_exu_exc_vld_d),
         .ifu_exu_exc_code_d         (ifu_exu_exc_code_d),
         .ifu_exu_exc_badv_d         (ifu_exu_exc_badv_d),
@@ -221,13 +248,34 @@ module top_tb;
         .csr_ifu_ic_en              (csr_ifu_ic_en),
         .csr_ifu_ic_en_pls          (csr_ifu_ic_en_pls),
         
-        // *** NEW connections ***
+        // CSR DA/PG and DMW
         .csr_ifu_crmd_da            (csr_ifu_crmd_da),
         .csr_ifu_crmd_pg            (csr_ifu_crmd_pg),
         .csr_ifu_dmw0_pseg          (csr_ifu_dmw0_pseg),
         .csr_ifu_dmw0_vseg          (csr_ifu_dmw0_vseg),
         .csr_ifu_dmw1_pseg          (csr_ifu_dmw1_pseg),
-        .csr_ifu_dmw1_vseg          (csr_ifu_dmw1_vseg)
+        .csr_ifu_dmw1_vseg          (csr_ifu_dmw1_vseg),
+        
+        // TLB outputs
+        .csr_itlb_tlbehi_vppn       (csr_itlb_tlbehi_vppn),
+        .csr_itlb_tlbidx_ne         (csr_itlb_tlbidx_ne),
+        .csr_itlb_tlbidx_ps         (csr_itlb_tlbidx_ps),
+        .csr_itlb_tlbidx_index      (csr_itlb_tlbidx_index),
+        .csr_itlb_tlbelo0_ppn       (csr_itlb_tlbelo0_ppn),
+        .csr_itlb_tlbelo0_g         (csr_itlb_tlbelo0_g),
+        .csr_itlb_tlbelo0_mat       (csr_itlb_tlbelo0_mat),
+        .csr_itlb_tlbelo0_plv       (csr_itlb_tlbelo0_plv),
+        .csr_itlb_tlbelo0_d         (csr_itlb_tlbelo0_d),
+        .csr_itlb_tlbelo0_v         (csr_itlb_tlbelo0_v),
+        .csr_itlb_tlbelo1_ppn       (csr_itlb_tlbelo1_ppn),
+        .csr_itlb_tlbelo1_g         (csr_itlb_tlbelo1_g),
+        .csr_itlb_tlbelo1_mat       (csr_itlb_tlbelo1_mat),
+        .csr_itlb_tlbelo1_plv       (csr_itlb_tlbelo1_plv),
+        .csr_itlb_tlbelo1_d         (csr_itlb_tlbelo1_d),
+        .csr_itlb_tlbelo1_v         (csr_itlb_tlbelo1_v),
+        .csr_itlb_tlbrefill_ctx     (csr_itlb_tlbrefill_ctx),
+        .exu_itlb_random_index      (exu_itlb_random_index),
+        .csr_itlb_tlbfill_vld_e     (csr_itlb_tlbfill_vld_e)
     );
     
     // Connect internal signals (through hierarchical reference)
@@ -294,6 +342,9 @@ module top_tb;
         ifu_exu_csr_rdtimeh_d = 0;
         
         ifu_exu_ertn_vld_d = 0;
+        ifu_exu_tlb_vld_d = 0;
+        ifu_exu_tlb_op_d = 0;
+        
         ifu_exu_exc_vld_d = 0;
         ifu_exu_exc_code_d = 0;
         ifu_exu_exc_badv_d = 0;
@@ -348,7 +399,7 @@ module top_tb;
     endtask
     
     // ============================================================
-    // Existing test tasks (kept as originally provided)
+    // Test tasks (unchanged from original)
     // ============================================================
     
     // Task: LD Instruction Test

@@ -1,4 +1,5 @@
 `include "../../defines.vh"
+`include "dec_defs.v"
 
 module c7bexu (
    input              clk,
@@ -66,6 +67,10 @@ module c7bexu (
    // ertn
    input              ifu_exu_ertn_vld_d,
 
+   // tlb
+   input              ifu_exu_tlb_vld_d,
+   input  [3:0]       ifu_exu_tlb_op_d,
+
    // exc
    input              ifu_exu_exc_vld_d,
    input  [5:0]       ifu_exu_exc_code_d,
@@ -100,7 +105,33 @@ module c7bexu (
    output [2:0]       csr_ifu_dmw0_pseg,
    output [2:0]       csr_ifu_dmw0_vseg,
    output [2:0]       csr_ifu_dmw1_pseg,
-   output [2:0]       csr_ifu_dmw1_vseg
+   output [2:0]       csr_ifu_dmw1_vseg,
+
+   output [18:0]      csr_itlb_tlbehi_vppn,
+
+   output             csr_itlb_tlbidx_ne,
+   output [5:0]       csr_itlb_tlbidx_ps,
+   output [4:0]       csr_itlb_tlbidx_index,
+
+   output [19:0]      csr_itlb_tlbelo0_ppn,
+   output             csr_itlb_tlbelo0_g,
+   output [1:0]       csr_itlb_tlbelo0_mat,
+   output [1:0]       csr_itlb_tlbelo0_plv,
+   output             csr_itlb_tlbelo0_d,
+   output             csr_itlb_tlbelo0_v,
+   
+   output [19:0]      csr_itlb_tlbelo1_ppn,
+   output             csr_itlb_tlbelo1_g,
+   output [1:0]       csr_itlb_tlbelo1_mat,
+   output [1:0]       csr_itlb_tlbelo1_plv,
+   output             csr_itlb_tlbelo1_d,
+   output             csr_itlb_tlbelo1_v,
+
+   output             csr_itlb_tlbrefill_ctx,
+
+   output [4:0]       exu_itlb_random_index,
+
+   output             csr_itlb_tlbfill_vld_e 
 );
 
 // Debug Code
@@ -139,6 +170,11 @@ module c7bexu (
    wire csr_timer_intr;
    wire csr_crmd_ie;
 
+   // tlb
+   wire tlb_vld_e;
+   wire [3:0] tlb_op_e;
+   wire tlbfill_vld_e; 
+
    wire csr_crmd_da;
    wire csr_crmd_pg;
    wire [2:0] csr_dmw0_pseg;
@@ -146,6 +182,29 @@ module c7bexu (
    wire [2:0] csr_dmw1_pseg;
    wire [2:0] csr_dmw1_vseg;
 
+   wire [18:0] csr_tlbehi_vppn;
+
+   wire        csr_tlbidx_ne;
+   wire [5:0]  csr_tlbidx_ps;
+   wire [4:0]  csr_tlbidx_index;
+
+   wire [19:0] csr_tlbelo0_ppn;
+   wire        csr_tlbelo0_g;
+   wire [1:0]  csr_tlbelo0_mat;
+   wire [1:0]  csr_tlbelo0_plv;
+   wire        csr_tlbelo0_d;
+   wire        csr_tlbelo0_v;
+
+   wire [19:0] csr_tlbelo1_ppn;
+   wire        csr_tlbelo1_g;
+   wire [1:0]  csr_tlbelo1_mat;
+   wire [1:0]  csr_tlbelo1_plv;
+   wire        csr_tlbelo1_d;
+   wire        csr_tlbelo1_v;
+
+   wire        csr_tlbrefill_ctx;
+
+   wire [4:0]  random_tlb_index;
 
 
    intr_sync #(
@@ -379,7 +438,33 @@ module c7bexu (
       .csr_lsu_dmw0_pseg               (csr_dmw0_pseg),
       .csr_lsu_dmw0_vseg               (csr_dmw0_vseg),
       .csr_lsu_dmw1_pseg               (csr_dmw1_pseg),
-      .csr_lsu_dmw1_vseg               (csr_dmw1_vseg)
+      .csr_lsu_dmw1_vseg               (csr_dmw1_vseg),
+
+      .csr_dtlb_tlbehi_vppn            (csr_tlbehi_vppn),
+
+      .csr_dtlb_tlbidx_ne              (csr_tlbidx_ne),
+      .csr_dtlb_tlbidx_ps              (csr_tlbidx_ps),
+      .csr_dtlb_tlbidx_index           (csr_tlbidx_index),
+
+      .csr_dtlb_tlbelo0_ppn            (csr_tlbelo0_ppn),
+      .csr_dtlb_tlbelo0_g              (csr_tlbelo0_g),
+      .csr_dtlb_tlbelo0_mat            (csr_tlbelo0_mat),
+      .csr_dtlb_tlbelo0_plv            (csr_tlbelo0_plv),
+      .csr_dtlb_tlbelo0_d              (csr_tlbelo0_d),
+      .csr_dtlb_tlbelo0_v              (csr_tlbelo0_v),
+
+      .csr_dtlb_tlbelo1_ppn            (csr_tlbelo1_ppn),
+      .csr_dtlb_tlbelo1_g              (csr_tlbelo1_g),
+      .csr_dtlb_tlbelo1_mat            (csr_tlbelo1_mat),
+      .csr_dtlb_tlbelo1_plv            (csr_tlbelo1_plv),
+      .csr_dtlb_tlbelo1_d              (csr_tlbelo1_d),
+      .csr_dtlb_tlbelo1_v              (csr_tlbelo1_v),
+
+      .csr_dtlb_tlbrefill_ctx          (csr_tlbrefill_ctx),
+
+      .exu_dtlb_random_index           (random_tlb_index),
+
+      .csr_dtlb_tlbfill_vld_e          (tlbfill_vld_e)
    );
 
 
@@ -558,8 +643,30 @@ module c7bexu (
       .csr_ifu_ic_en_pls               (csr_ifu_ic_en_pls), 
       .csr_ecl_timer_intr              (csr_timer_intr),
 
-      .ext_intr_sync                   (ext_intr_sync)
+      .ext_intr_sync                   (ext_intr_sync),
       //.ext_intr_sync                   (pic_csr_ext_intr)
+      
+      .csr_tlbehi_vppn                 (csr_tlbehi_vppn),
+
+      .csr_tlbidx_ne                   (csr_tlbidx_ne),
+      .csr_tlbidx_ps                   (csr_tlbidx_ps),
+      .csr_tlbidx_index                (csr_tlbidx_index),
+
+      .csr_tlbelo0_ppn                 (csr_tlbelo0_ppn),
+      .csr_tlbelo0_g                   (csr_tlbelo0_g),
+      .csr_tlbelo0_mat                 (csr_tlbelo0_mat),
+      .csr_tlbelo0_plv                 (csr_tlbelo0_plv),
+      .csr_tlbelo0_d                   (csr_tlbelo0_d),
+      .csr_tlbelo0_v                   (csr_tlbelo0_v),
+
+      .csr_tlbelo1_ppn                 (csr_tlbelo1_ppn),
+      .csr_tlbelo1_g                   (csr_tlbelo1_g),
+      .csr_tlbelo1_mat                 (csr_tlbelo1_mat),
+      .csr_tlbelo1_plv                 (csr_tlbelo1_plv),
+      .csr_tlbelo1_d                   (csr_tlbelo1_d),
+      .csr_tlbelo1_v                   (csr_tlbelo1_v),
+
+      .csr_tlbrefill_ctx               (csr_tlbrefill_ctx)
    );
 
    assign csr_ifu_crmd_da = csr_crmd_da;
@@ -569,6 +676,43 @@ module c7bexu (
    assign csr_ifu_dmw0_vseg = csr_dmw0_vseg;
    assign csr_ifu_dmw1_pseg = csr_dmw1_pseg;
    assign csr_ifu_dmw1_vseg = csr_dmw1_vseg;
+
+   assign csr_itlb_tlbehi_vppn  = csr_tlbehi_vppn;
+
+   assign csr_itlb_tlbidx_ne    = csr_tlbidx_ne;
+   assign csr_itlb_tlbidx_ps    = csr_tlbidx_ps;
+   assign csr_itlb_tlbidx_index = csr_tlbidx_index;
+
+   assign csr_itlb_tlbelo0_ppn = csr_tlbelo0_ppn;
+   assign csr_itlb_tlbelo0_g   = csr_tlbelo0_g;
+   assign csr_itlb_tlbelo0_mat = csr_tlbelo0_mat;
+   assign csr_itlb_tlbelo0_plv = csr_tlbelo0_plv;
+   assign csr_itlb_tlbelo0_d   = csr_tlbelo0_d;
+   assign csr_itlb_tlbelo0_v   = csr_tlbelo0_v;
+
+   assign csr_itlb_tlbelo1_ppn = csr_tlbelo1_ppn;
+   assign csr_itlb_tlbelo1_g   = csr_tlbelo1_g;
+   assign csr_itlb_tlbelo1_mat = csr_tlbelo1_mat;
+   assign csr_itlb_tlbelo1_plv = csr_tlbelo1_plv;
+   assign csr_itlb_tlbelo1_d   = csr_tlbelo1_d;
+   assign csr_itlb_tlbelo1_v   = csr_tlbelo1_v;
+
+   assign csr_itlb_tlbrefill_ctx = csr_tlbrefill_ctx;
+
+   // tlbfill
+   assign tlbfill_vld_e = tlb_vld_e & (tlb_op_e == `LTLB_TLBWR);
+   assign csr_itlb_tlbfill_vld_e = tlbfill_vld_e;
+
+
+   random u_random(
+      .clk                              (clk),
+      .resetn                           (resetn),
+      .count                            (random_tlb_index)
+   );
+
+   assign exu_itlb_random_index = random_tlb_index;
+
+
 
    assign rd_data_m = ({32{alu_vld_m}}               & alu_res_m) |
                       ({32{lsu_data_vld_ls3}}        & lsu_data_ls3) |
@@ -635,7 +779,7 @@ module c7bexu (
    );
 
 
-   wire vld_e = exc_vld_e | alu_vld_e | lsu_vld_e | bru_vld_e | mul_vld_e | div_vld_e | csr_vld_e | ertn_vld_e;
+   wire vld_e = exc_vld_e | alu_vld_e | lsu_vld_e | bru_vld_e | mul_vld_e | div_vld_e | csr_vld_e | ertn_vld_e | tlb_vld_e;
 
    // a valid instrution, with no exception so far, not flushed by previous
    // instructions, and no interruption
@@ -1109,5 +1253,17 @@ module c7bexu (
       .din (ertn_vld_m),
       .clk (clk),
       .q   (ertn_vld_w));
+
+   // tlb
+   dffrl_ns #(1) tlb_vld_e_reg (
+      .din (ifu_exu_tlb_vld_d & good_to_issue),
+      .clk (clk),
+      .rst_l (resetn),
+      .q   (tlb_vld_e));
+
+   dff_ns #(4) tlb_op_e_reg (
+      .din (ifu_exu_tlb_op_d),
+      .clk (clk),
+      .q   (tlb_op_e));
 
 endmodule
