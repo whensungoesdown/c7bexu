@@ -72,6 +72,7 @@ module top_tb;
     // EXC
     reg              ifu_exu_exc_vld_d;
     reg  [5:0]       ifu_exu_exc_code_d;
+    reg  [8:0]       ifu_exu_exc_subcode_d;
     reg  [31:0]      ifu_exu_exc_badv_d;
     
     // TLB input ports
@@ -106,10 +107,12 @@ module top_tb;
     wire [2:0]       csr_ifu_dmw1_pseg;
     wire [2:0]       csr_ifu_dmw1_vseg;
     
-    // TLB output ports from DUT
+    // TLB output ports from DUT (some are inputs to testbench)
+    // These are outputs from EXU to IFU/CSR/ITLB
     wire [18:0]      csr_itlb_tlbehi_vppn;
     wire             csr_itlb_tlbidx_ne;
     wire [5:0]       csr_itlb_tlbidx_ps;
+    wire             csr_itlb_tlbidx_i_d;  
     wire [4:0]       csr_itlb_tlbidx_index;
     wire [19:0]      csr_itlb_tlbelo0_ppn;
     wire             csr_itlb_tlbelo0_g;
@@ -123,9 +126,35 @@ module top_tb;
     wire [1:0]       csr_itlb_tlbelo1_plv;
     wire             csr_itlb_tlbelo1_d;
     wire             csr_itlb_tlbelo1_v;
+    wire [9:0]       csr_itlb_asid_asid;  
     wire             csr_itlb_tlbrefill_ctx;
     wire [4:0]       exu_itlb_random_index;
-    wire             csr_itlb_tlbfill_vld_e;
+    // Replaced csr_itlb_tlbfill_vld_e with exu_itlb_*
+    wire             exu_itlb_tlbfill_vld_e;
+    wire             exu_itlb_tlbwr_vld_e;      
+    wire             exu_itlb_tlbsrch_vld_e;    
+    wire             exu_itlb_invtlb_vld_e;     
+    wire [4:0]       exu_itlb_invtlb_op_e;      
+    wire [9:0]       exu_itlb_invtlb_asid_e;    
+    wire [18:0]      exu_itlb_invtlb_vppn_e;    
+    
+    // ITLB CSR readback inputs (from ITLB to EXU) - driven by testbench (tie to 0)
+    reg  [4:0]       itlb_csr_tlbidx_index;
+    reg  [18:0]      itlb_csr_tlbehi_vppn;
+    reg              itlb_csr_tlbelo_g;
+    reg  [5:0]       itlb_csr_tlbidx_ps;
+    reg              itlb_csr_tlbidx_e;
+    reg              itlb_csr_tlbelo0_v;
+    reg              itlb_csr_tlbelo0_d;
+    reg  [1:0]       itlb_csr_tlbelo0_mat;
+    reg  [1:0]       itlb_csr_tlbelo0_plv;
+    reg  [19:0]      itlb_csr_tlbelo0_ppn;
+    reg              itlb_csr_tlbelo1_v;
+    reg              itlb_csr_tlbelo1_d;
+    reg  [1:0]       itlb_csr_tlbelo1_mat;
+    reg  [1:0]       itlb_csr_tlbelo1_plv;
+    reg  [19:0]      itlb_csr_tlbelo1_ppn;
+    reg  [9:0]       itlb_csr_asid_asid;
     
     // Internal signals for monitoring
     wire [31:0]      rs1_data_d;
@@ -224,6 +253,7 @@ module top_tb;
         
         .ifu_exu_exc_vld_d          (ifu_exu_exc_vld_d),
         .ifu_exu_exc_code_d         (ifu_exu_exc_code_d),
+        .ifu_exu_exc_subcode_d      (ifu_exu_exc_subcode_d), 
         .ifu_exu_exc_badv_d         (ifu_exu_exc_badv_d),
         
         .lsu_biu_rd_req             (lsu_biu_rd_req),
@@ -256,10 +286,11 @@ module top_tb;
         .csr_ifu_dmw1_pseg          (csr_ifu_dmw1_pseg),
         .csr_ifu_dmw1_vseg          (csr_ifu_dmw1_vseg),
         
-        // TLB outputs
+        // TLB outputs (some are inputs to testbench)
         .csr_itlb_tlbehi_vppn       (csr_itlb_tlbehi_vppn),
         .csr_itlb_tlbidx_ne         (csr_itlb_tlbidx_ne),
         .csr_itlb_tlbidx_ps         (csr_itlb_tlbidx_ps),
+        .csr_itlb_tlbidx_i_d        (csr_itlb_tlbidx_i_d), 
         .csr_itlb_tlbidx_index      (csr_itlb_tlbidx_index),
         .csr_itlb_tlbelo0_ppn       (csr_itlb_tlbelo0_ppn),
         .csr_itlb_tlbelo0_g         (csr_itlb_tlbelo0_g),
@@ -273,9 +304,35 @@ module top_tb;
         .csr_itlb_tlbelo1_plv       (csr_itlb_tlbelo1_plv),
         .csr_itlb_tlbelo1_d         (csr_itlb_tlbelo1_d),
         .csr_itlb_tlbelo1_v         (csr_itlb_tlbelo1_v),
+        .csr_itlb_asid_asid         (csr_itlb_asid_asid), 
         .csr_itlb_tlbrefill_ctx     (csr_itlb_tlbrefill_ctx),
         .exu_itlb_random_index      (exu_itlb_random_index),
-        .csr_itlb_tlbfill_vld_e     (csr_itlb_tlbfill_vld_e)
+        // Replaced csr_itlb_tlbfill_vld_e with exu_itlb_tlbfill_vld_e
+        .exu_itlb_tlbfill_vld_e     (exu_itlb_tlbfill_vld_e),
+        .exu_itlb_tlbwr_vld_e       (exu_itlb_tlbwr_vld_e),  
+        .exu_itlb_tlbsrch_vld_e     (exu_itlb_tlbsrch_vld_e),
+        .exu_itlb_invtlb_vld_e      (exu_itlb_invtlb_vld_e), 
+        .exu_itlb_invtlb_op_e       (exu_itlb_invtlb_op_e),  
+        .exu_itlb_invtlb_asid_e     (exu_itlb_invtlb_asid_e),
+        .exu_itlb_invtlb_vppn_e     (exu_itlb_invtlb_vppn_e),
+        
+        // ITLB CSR readback inputs (from ITLB to EXU)
+        .itlb_csr_tlbidx_index      (itlb_csr_tlbidx_index),
+        .itlb_csr_tlbehi_vppn       (itlb_csr_tlbehi_vppn),
+        .itlb_csr_tlbelo_g          (itlb_csr_tlbelo_g),
+        .itlb_csr_tlbidx_ps         (itlb_csr_tlbidx_ps),
+        .itlb_csr_tlbidx_e          (itlb_csr_tlbidx_e),
+        .itlb_csr_tlbelo0_v         (itlb_csr_tlbelo0_v),
+        .itlb_csr_tlbelo0_d         (itlb_csr_tlbelo0_d),
+        .itlb_csr_tlbelo0_mat       (itlb_csr_tlbelo0_mat),
+        .itlb_csr_tlbelo0_plv       (itlb_csr_tlbelo0_plv),
+        .itlb_csr_tlbelo0_ppn       (itlb_csr_tlbelo0_ppn),
+        .itlb_csr_tlbelo1_v         (itlb_csr_tlbelo1_v),
+        .itlb_csr_tlbelo1_d         (itlb_csr_tlbelo1_d),
+        .itlb_csr_tlbelo1_mat       (itlb_csr_tlbelo1_mat),
+        .itlb_csr_tlbelo1_plv       (itlb_csr_tlbelo1_plv),
+        .itlb_csr_tlbelo1_ppn       (itlb_csr_tlbelo1_ppn),
+        .itlb_csr_asid_asid         (itlb_csr_asid_asid)
     );
     
     // Connect internal signals (through hierarchical reference)
@@ -347,6 +404,7 @@ module top_tb;
         
         ifu_exu_exc_vld_d = 0;
         ifu_exu_exc_code_d = 0;
+        ifu_exu_exc_subcode_d = 0;
         ifu_exu_exc_badv_d = 0;
         
         biu_lsu_rd_ack = 0;
@@ -360,6 +418,24 @@ module top_tb;
         biu_lsu_wr_fault_code = 0;
         
         ext_intr = 0;
+        
+        // Initialize ITLB CSR readback inputs to 0
+        itlb_csr_tlbidx_index = 5'b0;
+        itlb_csr_tlbehi_vppn  = 19'b0;
+        itlb_csr_tlbelo_g     = 1'b0;
+        itlb_csr_tlbidx_ps    = 6'b0;
+        itlb_csr_tlbidx_e     = 1'b0;
+        itlb_csr_tlbelo0_v    = 1'b0;
+        itlb_csr_tlbelo0_d    = 1'b0;
+        itlb_csr_tlbelo0_mat  = 2'b0;
+        itlb_csr_tlbelo0_plv  = 2'b0;
+        itlb_csr_tlbelo0_ppn  = 20'b0;
+        itlb_csr_tlbelo1_v    = 1'b0;
+        itlb_csr_tlbelo1_d    = 1'b0;
+        itlb_csr_tlbelo1_mat  = 2'b0;
+        itlb_csr_tlbelo1_plv  = 2'b0;
+        itlb_csr_tlbelo1_ppn  = 20'b0;
+        itlb_csr_asid_asid    = 10'b0;
     end
     endtask
     

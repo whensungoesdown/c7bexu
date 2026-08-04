@@ -35,16 +35,18 @@ reg lsu_vld_e;
 reg lsu_except_ale_ls1;
 reg lsu_except_buserr_ls3;
 reg lsu_except_ecc_ls3;
+reg lsu_except_tlbr_ls2;        // NEW
 reg lsu_data_valid_ls3;
 reg lsu_wr_fin_ls3;
 reg csr_vld_e;
 reg div_vld_e;
 reg div_complete_m;
+reg tlb_vld_e;                  // NEW
 
-// New signals for dbar/ibar/sc
+// Signals for dbar/ibar/sc
 reg lsu_ecl_ibar_fin;
 reg lsu_ecl_dbar_fin;
-reg lsu_ecl_sc_fin;          // <-- NEW
+reg lsu_ecl_sc_fin;
 
 c7bexu_ecl dut (
     .clk(clk),
@@ -55,6 +57,7 @@ c7bexu_ecl dut (
     .lsu_except_ale_ls1(lsu_except_ale_ls1),
     .lsu_except_buserr_ls3(lsu_except_buserr_ls3),
     .lsu_except_ecc_ls3(lsu_except_ecc_ls3),
+    .lsu_except_tlbr_ls2(lsu_except_tlbr_ls2),   // NEW
     .lsu_data_valid_ls3(lsu_data_valid_ls3),
     .lsu_wr_fin_ls3(lsu_wr_fin_ls3),
     .csr_vld_e(csr_vld_e),
@@ -62,7 +65,8 @@ c7bexu_ecl dut (
     .div_complete_m(div_complete_m),
     .lsu_ecl_ibar_fin(lsu_ecl_ibar_fin),
     .lsu_ecl_dbar_fin(lsu_ecl_dbar_fin),
-    .lsu_ecl_sc_fin(lsu_ecl_sc_fin)   // <-- NEW
+    .lsu_ecl_sc_fin(lsu_ecl_sc_fin),
+    .tlb_vld_e(tlb_vld_e)       // NEW
 );
 
 // ===========================================
@@ -74,6 +78,7 @@ begin
     lsu_except_ale_ls1 = 0;
     lsu_except_buserr_ls3 = 0;
     lsu_except_ecc_ls3 = 0;
+    lsu_except_tlbr_ls2 = 0;        // NEW
     lsu_data_valid_ls3 = 0;
     lsu_wr_fin_ls3 = 0;
     csr_vld_e = 0;
@@ -81,7 +86,8 @@ begin
     div_complete_m = 0;
     lsu_ecl_ibar_fin = 0;
     lsu_ecl_dbar_fin = 0;
-    lsu_ecl_sc_fin = 0;          // <-- NEW
+    lsu_ecl_sc_fin = 0;
+    tlb_vld_e = 0;                  // NEW
 end
 endtask
 
@@ -153,11 +159,11 @@ end
 endtask
 
 // ===========================================
-// Test Case 4: LSU Exception Ends Stall
+// Test Case 4: LSU Exception (ALE) Ends Stall
 // ===========================================
 task test_lsu_except_ale;
 begin
-    $display("[%0t] Test 4: LSU exception end stall_ifu", $time);
+    $display("[%0t] Test 4: LSU exception (ALE) end stall_ifu", $time);
     test_count = test_count + 1;
     init_signals;
     @(posedge clk);
@@ -170,10 +176,10 @@ begin
     #10;
     // Stall should be de-asserted after LSU exception
     if (stall_ifu === 1'b0) begin
-        $display("Test 4: LSU exception end stall_ifu  -> PASS");
+        $display("Test 4: LSU exception (ALE) end stall_ifu  -> PASS");
         pass_count = pass_count + 1;
     end else begin
-        $display("Test 4: LSU exception end stall_ifu  -> FAIL: stall_ifu should be 0 after LSU exception");
+        $display("Test 4: LSU exception (ALE) end stall_ifu  -> FAIL: stall_ifu should be 0 after LSU exception");
         fail_count = fail_count + 1;
     end
 end
@@ -233,6 +239,30 @@ end
 endtask
 
 // ===========================================
+// Test Case 7: TLB Operation Triggers Stall
+// ===========================================
+task test_tlb_stall;
+begin
+    $display("[%0t] Test 7: TLB operation stall_ifu", $time);
+    test_count = test_count + 1;
+    init_signals;
+    @(posedge clk);
+    tlb_vld_e = 1;
+    #10;
+    // Stall should be asserted while tlb_vld_e is high (combinational)
+    if (stall_ifu === 1'b1) begin
+        $display("Test 7: TLB operation stall_ifu  -> PASS");
+        pass_count = pass_count + 1;
+    end else begin
+        $display("Test 7: TLB operation stall_ifu  -> FAIL: stall_ifu should be 1 during TLB operation");
+        fail_count = fail_count + 1;
+    end
+    @(posedge clk);
+    tlb_vld_e = 0;
+end
+endtask
+
+// ===========================================
 // Main Test Sequence
 // ===========================================
 initial begin
@@ -248,7 +278,8 @@ initial begin
     test_lsu_start_stall_ifu;
     test_lsu_except_ale;
     test_lsu_normal_end;
-    test_lsu_sc_fin_end;   // <-- NEW test case
+    test_lsu_sc_fin_end;
+    test_tlb_stall;   // NEW
 
     // Display test summary
     #10;

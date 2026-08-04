@@ -2,8 +2,6 @@ add wave -position end  result:/top_tb/clk
 add wave -position end  result:/top_tb/resetn
 
 add wave -divider
-add wave -position end  result:/top_tb/stall
-add wave -divider
 add wave -position end  result:/top_tb/dut/lsu_vld_e
 add wave -position end  result:/top_tb/dut/lsu_bgn
 add wave -position end  result:/top_tb/dut/lsu_except_ale_ls1
