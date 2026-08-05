@@ -918,7 +918,7 @@ module c7bexu (
    
    // Because lsu_except_ale_ls1 merge into exc_vld_m at _m, therefore, ale
    // exception at _e also need to flush
-   assign flush = lsu_except_ale_ls1 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   assign flush = lsu_except_ale_ls1 | lsu_except_tlbr_ls2 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall_ifu;
 
