@@ -156,6 +156,9 @@ module top_tb;
     reg  [19:0]      itlb_csr_tlbelo1_ppn;
     reg  [9:0]       itlb_csr_asid_asid;
     
+    // New: CSR privilege level for ITLB (for PPI detection)
+    wire  [1:0]       csr_itlb_crmd_plv;
+    
     // Internal signals for monitoring
     wire [31:0]      rs1_data_d;
     wire [31:0]      rs2_data_d;
@@ -332,7 +335,10 @@ module top_tb;
         .itlb_csr_tlbelo1_mat       (itlb_csr_tlbelo1_mat),
         .itlb_csr_tlbelo1_plv       (itlb_csr_tlbelo1_plv),
         .itlb_csr_tlbelo1_ppn       (itlb_csr_tlbelo1_ppn),
-        .itlb_csr_asid_asid         (itlb_csr_asid_asid)
+        .itlb_csr_asid_asid         (itlb_csr_asid_asid),
+        
+        // New: CSR privilege level for ITLB
+        .csr_itlb_crmd_plv          (csr_itlb_crmd_plv)
     );
     
     // Connect internal signals (through hierarchical reference)

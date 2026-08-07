@@ -9,7 +9,8 @@ module c7bexu_ecl (
    input              lsu_except_ale_ls1,
    input              lsu_except_buserr_ls3,
    input              lsu_except_ecc_ls3, // NOT IMPLEMENTED
-   input              lsu_except_tlbr_ls2,
+   //input              lsu_except_tlbr_ls2,
+   input              lsu_except_tlb_related_ls2,
    input              lsu_data_valid_ls3,
    input              lsu_wr_fin_ls3,
 
@@ -33,7 +34,8 @@ module c7bexu_ecl (
    wire lsu_bgn = lsu_vld_e;
    //wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3;
    //wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3 | lsu_ecl_ibar_fin | lsu_ecl_dbar_fin | lsu_ecl_sc_fin;
-   wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3 | lsu_except_tlbr_ls2 | lsu_ecl_ibar_fin | lsu_ecl_dbar_fin | lsu_ecl_sc_fin;
+   //wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3 | lsu_except_tlbr_ls2 | lsu_ecl_ibar_fin | lsu_ecl_dbar_fin | lsu_ecl_sc_fin;
+   wire lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3 | lsu_except_buserr_ls3 | lsu_except_tlb_related_ls2 | lsu_ecl_ibar_fin | lsu_ecl_dbar_fin | lsu_ecl_sc_fin;
 
    // lsu_bgn            : _-______
    // lsu_end            : ______-_

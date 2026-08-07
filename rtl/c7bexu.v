@@ -133,6 +133,8 @@ module c7bexu (
 
    output             csr_itlb_tlbrefill_ctx,
 
+   output [1:0]       csr_itlb_crmd_plv,
+
    output [4:0]       exu_itlb_random_index,
 
    output             exu_itlb_tlbfill_vld_e,
@@ -209,6 +211,7 @@ module c7bexu (
    wire tlbsrch_vld_m;
    wire invtlb_vld_e;
 
+   wire [1:0] csr_crmd_plv;
    wire csr_crmd_da;
    wire csr_crmd_pg;
    wire [2:0] csr_dmw0_pseg;
@@ -241,6 +244,9 @@ module c7bexu (
 
    wire        csr_tlbrefill_ctx;
 
+   // csr to dtlb, to do
+   wire [1:0]  csr_dtlb_crmd_plv;
+
    wire [4:0]  random_tlb_index;
 
    // dtlb to csr
@@ -266,6 +272,7 @@ module c7bexu (
    wire [4:0]  exu_dtlb_invtlb_op_e;
    wire [9:0]  exu_dtlb_invtlb_asid_e;
    wire [18:0] exu_dtlb_invtlb_vppn_e;
+
 
 
    intr_sync #(
@@ -435,6 +442,16 @@ module c7bexu (
    wire lsu_except_ecc_ls3;
    wire lsu_except_tlbr_ls2;   
    wire [31:0] lsu_except_tlbr_badv_ls2;
+   wire lsu_except_pil_ls2;
+   wire [31:0] lsu_except_pil_badv_ls2;
+   wire lsu_except_pis_ls2;
+   wire [31:0] lsu_except_pis_badv_ls2;
+   wire lsu_except_ppi_ls2;
+   wire [31:0] lsu_except_ppi_badv_ls2;
+   wire lsu_except_pme_ls2;
+   wire [31:0] lsu_except_pme_badv_ls2;
+
+   wire lsu_except_tlb_related_ls2;
 
    wire lsu_ecl_ibar_fin;
    wire lsu_ecl_dbar_fin;
@@ -450,6 +467,7 @@ module c7bexu (
    assign lsu_offset_e = lsu_double_read_e ? rs2_data_byp_e: imm_shifted_e;
    assign lsu_wdata_e = rs2_data_byp_e;
 
+   assign lsu_except_tlb_related_ls2 = lsu_except_tlbr_ls2 | lsu_except_pil_ls2 | lsu_except_pis_ls2 | lsu_except_ppi_ls2 | lsu_except_pme_ls2;
 
    c7blsu u_lsu(
       .clk                             (clk),
@@ -472,6 +490,14 @@ module c7bexu (
       .lsu_ecl_except_buserr_badv_ls3  (lsu_except_buserr_badv_ls3),
       .lsu_ecl_except_tlbr_ls2         (lsu_except_tlbr_ls2),
       .lsu_ecl_except_tlbr_badv_ls2    (lsu_except_tlbr_badv_ls2),
+      .lsu_except_pil_ls2              (lsu_except_pil_ls2),
+      .lsu_except_pil_badv_ls2         (lsu_except_pil_badv_ls2),
+      .lsu_except_pis_ls2              (lsu_except_pis_ls2),
+      .lsu_except_pis_badv_ls2         (lsu_except_pis_badv_ls2),
+      .lsu_except_ppi_ls2              (lsu_except_ppi_ls2),
+      .lsu_except_ppi_badv_ls2         (lsu_except_ppi_badv_ls2),
+      .lsu_except_pme_ls2              (lsu_except_pme_ls2),
+      .lsu_except_pme_badv_ls2         (lsu_except_pme_badv_ls2),
 
       .lsu_ecl_ibar_fin                (lsu_ecl_ibar_fin),
       .lsu_ecl_dbar_fin                (lsu_ecl_dbar_fin),
@@ -532,6 +558,8 @@ module c7bexu (
       .csr_dtlb_asid_asid              (csr_asid_asid),
 
       .csr_dtlb_tlbrefill_ctx          (csr_tlbrefill_ctx),
+
+      .csr_dtlb_crmd_plv               (csr_dtlb_crmd_plv),
 
       .exu_dtlb_random_index           (random_tlb_index),
 
@@ -731,6 +759,7 @@ module c7bexu (
 
       .csr_lsu_llb                     (csr_lsu_llb),
       .csr_ecl_crmd_ie                 (csr_crmd_ie),
+      .csr_crmd_plv                    (csr_crmd_plv),
       .csr_crmd_da                     (csr_crmd_da),
       .csr_crmd_pg                     (csr_crmd_pg),
       .csr_dmw0_pseg                   (csr_dmw0_pseg), 
@@ -840,6 +869,10 @@ module c7bexu (
 
    assign csr_itlb_tlbrefill_ctx = csr_tlbrefill_ctx;
 
+   assign csr_itlb_crmd_plv = csr_crmd_plv;
+
+   assign csr_dtlb_crmd_plv = csr_crmd_plv;
+
    // tlbfill
    assign tlbfill_vld_e = tlb_vld_e & (tlb_op_e == `LTLB_TLBWR);
    assign exu_itlb_tlbfill_vld_e = tlbfill_vld_e;
@@ -918,7 +951,8 @@ module c7bexu (
    
    // Because lsu_except_ale_ls1 merge into exc_vld_m at _m, therefore, ale
    // exception at _e also need to flush
-   assign flush = lsu_except_ale_ls1 | lsu_except_tlbr_ls2 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   //assign flush = lsu_except_ale_ls1 | lsu_except_tlbr_ls2 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   assign flush = lsu_except_ale_ls1 | lsu_except_tlb_related_ls2 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall_ifu;
 
@@ -933,7 +967,8 @@ module c7bexu (
       .lsu_except_ale_ls1              (lsu_except_ale_ls1),
       .lsu_except_buserr_ls3           (lsu_except_buserr_ls3),
       .lsu_except_ecc_ls3              (lsu_except_ecc_ls3),
-      .lsu_except_tlbr_ls2             (lsu_except_tlbr_ls2),
+      //.lsu_except_tlbr_ls2             (lsu_except_tlbr_ls2),
+      .lsu_except_tlb_related_ls2      (lsu_except_tlb_related_ls2),
       .lsu_data_valid_ls3              (lsu_data_vld_ls3),
       .lsu_wr_fin_ls3                  (lsu_wr_fin_ls3),
 
@@ -1049,7 +1084,8 @@ module c7bexu (
    //       immediately (e.g., ALE exception).
    //
    //wire exc_vld_merge_m = exc_vld_m | lsu_except_ale_m | lsu_except_buserr_ls3;
-   wire exc_vld_merge_m = exc_vld_m | lsu_except_ale_m | lsu_except_buserr_ls3 | lsu_except_tlbr_ls2;
+   //wire exc_vld_merge_m = exc_vld_m | lsu_except_ale_m | lsu_except_buserr_ls3 | lsu_except_tlbr_ls2;
+   wire exc_vld_merge_m = exc_vld_m | lsu_except_ale_m | lsu_except_buserr_ls3 | lsu_except_tlb_related_ls2;
 
    dff_ns #(1) exc_vld_w_reg (
       .din (exc_vld_merge_m),
@@ -1063,6 +1099,10 @@ module c7bexu (
    wire [5:0] exc_code_merge_m = lsu_except_buserr_ls3 ? 6'h08 :   // EXC_ADEF/EXC_ADEM
                                   lsu_except_ale_m      ? 6'h09 :   // EXC_ALE
                                   lsu_except_tlbr_ls2   ? 6'h3f :   // EXC_TLBR
+                                  lsu_except_pil_ls2    ? 6'h01 :   // EXC_PIL
+                                  lsu_except_pis_ls2    ? 6'h02 :   // EXC_PIS
+                                  lsu_except_ppi_ls2    ? 6'h07 :   // EXC_PPI
+                                  lsu_except_pme_ls2    ? 6'h04 :   // EXC_PME
                                   exc_code_m;						 
                        
    dff_ns #(6) exc_code_w_reg (
@@ -1071,7 +1111,8 @@ module c7bexu (
       .q   (exc_code_w));
 
 
-   wire [8:0] exc_subcode_merge_m = lsu_except_tlbr_ls2 ? 1'b1 : exc_subcode_m;
+   //wire [8:0] exc_subcode_merge_m = lsu_except_tlbr_ls2 | lsu_except_pil_ls2 | lsu_except_pis_ls2 | lsu_except_pme_ls2 ? 1'b1 : exc_subcode_m;
+   wire [8:0] exc_subcode_merge_m = lsu_except_tlb_related_ls2 ? 1'b1 : exc_subcode_m;
 
    dff_ns #(9) exc_subcode_w_reg (
       .din (exc_subcode_merge_m),
@@ -1083,7 +1124,11 @@ module c7bexu (
 //	                                                  exc_badv_m;
    wire [31:0] exc_badv_merge_m = lsu_except_buserr_ls3 ? lsu_except_buserr_badv_ls3 :
                                   lsu_except_ale_m      ? lsu_except_ale_badv_m :
-                                  lsu_except_tlbr_ls2   ? lsu_except_tlbr_badv_ls2 :
+                                  lsu_except_tlbr_ls2   ? lsu_except_tlbr_badv_ls2 :   // should optimize,
+                                  lsu_except_pil_ls2    ? lsu_except_pil_badv_ls2 :    // tlb related badv are all lsu_addr_ls2
+                                  lsu_except_pis_ls2    ? lsu_except_pis_badv_ls2 :
+                                  lsu_except_ppi_ls2    ? lsu_except_ppi_badv_ls2 :
+                                  lsu_except_pme_ls2    ? lsu_except_pme_badv_ls2 :
                                   exc_badv_m;
 
    dff_ns #(32) exc_badv_w_reg (

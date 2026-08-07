@@ -35,13 +35,13 @@ reg lsu_vld_e;
 reg lsu_except_ale_ls1;
 reg lsu_except_buserr_ls3;
 reg lsu_except_ecc_ls3;
-reg lsu_except_tlbr_ls2;        // NEW
+reg lsu_except_tlb_related_ls2;   // Combined TLB exception (TLBR/PIL/PIS/PPI/PME)
 reg lsu_data_valid_ls3;
 reg lsu_wr_fin_ls3;
 reg csr_vld_e;
 reg div_vld_e;
 reg div_complete_m;
-reg tlb_vld_e;                  // NEW
+reg tlb_vld_e;
 
 // Signals for dbar/ibar/sc
 reg lsu_ecl_ibar_fin;
@@ -57,7 +57,7 @@ c7bexu_ecl dut (
     .lsu_except_ale_ls1(lsu_except_ale_ls1),
     .lsu_except_buserr_ls3(lsu_except_buserr_ls3),
     .lsu_except_ecc_ls3(lsu_except_ecc_ls3),
-    .lsu_except_tlbr_ls2(lsu_except_tlbr_ls2),   // NEW
+    .lsu_except_tlb_related_ls2(lsu_except_tlb_related_ls2),
     .lsu_data_valid_ls3(lsu_data_valid_ls3),
     .lsu_wr_fin_ls3(lsu_wr_fin_ls3),
     .csr_vld_e(csr_vld_e),
@@ -66,7 +66,7 @@ c7bexu_ecl dut (
     .lsu_ecl_ibar_fin(lsu_ecl_ibar_fin),
     .lsu_ecl_dbar_fin(lsu_ecl_dbar_fin),
     .lsu_ecl_sc_fin(lsu_ecl_sc_fin),
-    .tlb_vld_e(tlb_vld_e)       // NEW
+    .tlb_vld_e(tlb_vld_e)
 );
 
 // ===========================================
@@ -78,7 +78,7 @@ begin
     lsu_except_ale_ls1 = 0;
     lsu_except_buserr_ls3 = 0;
     lsu_except_ecc_ls3 = 0;
-    lsu_except_tlbr_ls2 = 0;        // NEW
+    lsu_except_tlb_related_ls2 = 0;
     lsu_data_valid_ls3 = 0;
     lsu_wr_fin_ls3 = 0;
     csr_vld_e = 0;
@@ -87,7 +87,7 @@ begin
     lsu_ecl_ibar_fin = 0;
     lsu_ecl_dbar_fin = 0;
     lsu_ecl_sc_fin = 0;
-    tlb_vld_e = 0;                  // NEW
+    tlb_vld_e = 0;
 end
 endtask
 
@@ -279,7 +279,7 @@ initial begin
     test_lsu_except_ale;
     test_lsu_normal_end;
     test_lsu_sc_fin_end;
-    test_tlb_stall;   // NEW
+    test_tlb_stall;
 
     // Display test summary
     #10;
