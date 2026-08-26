@@ -1096,7 +1096,7 @@ module c7bexu (
 //   wire [5:0] exc_code_merge_m = lsu_except_buserr_ls3 ? 6'h08 :  // EXC_ADEF/EXC_ADEM
 //                                 lsu_except_ale_m      ? 6'h09 :  // EXC_ALE
 //	                                                 exc_code_m;
-   wire [5:0] exc_code_merge_m = lsu_except_buserr_ls3 ? 6'h08 :   // EXC_ADEF/EXC_ADEM
+   wire [5:0] exc_code_merge_m = lsu_except_buserr_ls3 ? 6'h08 :    // EXC_ADEM
                                   lsu_except_ale_m      ? 6'h09 :   // EXC_ALE
                                   lsu_except_tlbr_ls2   ? 6'h3f :   // EXC_TLBR
                                   lsu_except_pil_ls2    ? 6'h01 :   // EXC_PIL
@@ -1112,7 +1112,7 @@ module c7bexu (
 
 
    //wire [8:0] exc_subcode_merge_m = lsu_except_tlbr_ls2 | lsu_except_pil_ls2 | lsu_except_pis_ls2 | lsu_except_pme_ls2 ? 1'b1 : exc_subcode_m;
-   wire [8:0] exc_subcode_merge_m = lsu_except_tlb_related_ls2 ? 1'b1 : exc_subcode_m;
+   wire [8:0] exc_subcode_merge_m = (lsu_except_tlb_related_ls2 | lsu_except_buserr_ls3) ? 1'b1 : exc_subcode_m;  // ADEM subcode 0x1
 
    dff_ns #(9) exc_subcode_w_reg (
       .din (exc_subcode_merge_m),
