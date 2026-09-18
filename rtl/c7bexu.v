@@ -749,7 +749,7 @@ module c7bexu (
       .csr_tlbrentry                   (csr_tlbr_addr),
 
       .ecl_csr_badv_w                  (exc_badv_w), 
-      .exu_ifu_except                  (exc_vld_w),
+      .exu_csr_except_w                (exc_vld_w),
       .ecl_csr_exccode_w               (exc_code_w),
       .ecl_csr_excsubcode_w            (exc_subcode_w),
       .ifu_exu_pc_w                    (pc_w),
