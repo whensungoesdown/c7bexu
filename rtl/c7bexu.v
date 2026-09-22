@@ -273,6 +273,8 @@ module c7bexu (
    wire [9:0]  exu_dtlb_invtlb_asid_e;
    wire [18:0] exu_dtlb_invtlb_vppn_e;
 
+   wire exu_csr_last_inst_ertn;
+
 
 
    intr_sync #(
@@ -349,6 +351,7 @@ module c7bexu (
 
    wire [31:0] rd_data_m;
    wire [31:0] rd_data_w;
+
 
    c7bexu_rf u_rf (
       .clk                             (clk),
@@ -834,7 +837,9 @@ module c7bexu (
       .dtlb_csr_tlbelo1_mat            (dtlb_csr_tlbelo1_mat),
       .dtlb_csr_tlbelo1_plv            (dtlb_csr_tlbelo1_plv),
       .dtlb_csr_tlbelo1_ppn            (dtlb_csr_tlbelo1_ppn),
-      .dtlb_csr_asid_asid              (dtlb_csr_asid_asid)
+      .dtlb_csr_asid_asid              (dtlb_csr_asid_asid),
+
+      .exu_csr_last_inst_ertn        (exu_csr_last_inst_ertn)
    );
 
    assign csr_ifu_crmd_da = csr_crmd_da;
@@ -1510,5 +1515,15 @@ module c7bexu (
       .din (ifu_exu_tlb_op_d),
       .clk (clk),
       .q   (tlb_op_e));
+
+
+
+   dffrle_ns #(1) last_inst_ertn_reg (
+      .din   (ertn_vld_e),
+      .rst_l (resetn),
+      .en    (vld_e & ~exc_vld_e),
+      .clk   (clk),
+      .q     (exu_csr_last_inst_ertn));
+
 
 endmodule
