@@ -957,7 +957,13 @@ module c7bexu (
    // Because lsu_except_ale_ls1 merge into exc_vld_m at _m, therefore, ale
    // exception at _e also need to flush
    //assign flush = lsu_except_ale_ls1 | lsu_except_tlbr_ls2 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
-   assign flush = lsu_except_ale_ls1 | lsu_except_tlb_related_ls2 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+   //assign flush = lsu_except_ale_ls1 | lsu_except_tlb_related_ls2 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
+
+   // lsu_except_tlb_related_ls2, adding this, there will be a long path,
+   // staring from dtlb vppn_g to flush, then to ifu:exc_vld 
+   // Since dtlb exceptions happen only on LSU, the IFU is already stalled.
+   // Maybe should let the exc_vld_w does its job.
+   assign flush = lsu_except_ale_ls1 | exc_vld_e | exc_vld_m | exc_vld_w | ertn_vld_e | ertn_vld_m | ertn_vld_w | bru_branch_e | bru_branch_m | bru_branch_w;
 
    assign exu_ifu_stall = stall_ifu;
 
@@ -973,7 +979,8 @@ module c7bexu (
       .lsu_except_buserr_ls3           (lsu_except_buserr_ls3),
       .lsu_except_ecc_ls3              (lsu_except_ecc_ls3),
       //.lsu_except_tlbr_ls2             (lsu_except_tlbr_ls2),
-      .lsu_except_tlb_related_ls2      (lsu_except_tlb_related_ls2),
+      //.lsu_except_tlb_related_ls2      (lsu_except_tlb_related_ls2),
+      .lsu_except_tlb_related_ls2      (exc_vld_w),  // uty: test
       .lsu_data_valid_ls3              (lsu_data_vld_ls3),
       .lsu_wr_fin_ls3                  (lsu_wr_fin_ls3),
 
@@ -1155,10 +1162,17 @@ module c7bexu (
       .en  (reg_en_e & vld_e),
       .q   (pc_m));
 
-   dffe_ns #(32) pc_w_reg (
+   //dffe_ns #(32) pc_w_reg (
+   //   .din (pc_m),
+   //   .clk (clk),
+   //   .en  (reg_en_m),
+   //   .q   (pc_w));
+
+   // uty: test
+   dff_ns #(32) pc_w_reg (
       .din (pc_m),
       .clk (clk),
-      .en  (reg_en_m),
+      //.en  (reg_en_m),
       .q   (pc_w));
 
    dff_ns #(5) rs1_e_reg (
