@@ -1228,13 +1228,18 @@ module c7bexu (
       .din (wen_e & ~exc_vld_e),
       .clk (clk),
       .en  (reg_en_e),
+      //.en  (reg_en_e | exc_vld_e),
       .rst_l (resetn),
       .q   (wen_m));
 
    dffrle_ns #(1) wen_w_reg (
-      .din (wen_m & ~exc_vld_merge_m), // only when no exception
+      //.din (wen_m & ~exc_vld_merge_m), // only when no exception
+      // it should be exc_vld_merge_m_dly, one cycle behind exc_vld_merge_m,
+      // which is the exc_vld_w
+      .din (wen_m & ~exc_vld_merge_m & ~exc_vld_w), // only when no exception
       .clk (clk),
       .en  (reg_en_m),
+      //.en  (reg_en_m | exc_vld_merge_m),
       .rst_l (resetn),
       .q   (wen_w));
 
