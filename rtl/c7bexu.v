@@ -200,6 +200,7 @@ module c7bexu (
    wire ext_intr_pulse;
    wire csr_timer_intr;
    wire csr_crmd_ie;
+   wire [12:0] csr_ecfg_lie;   // ECFG.LIE, bit 3 timer, bit 4 external
 
    // tlb
    wire tlb_vld_e;
@@ -295,8 +296,10 @@ module c7bexu (
    pic u_pic (
       .clk                             (clk),
       .resetn                          (resetn),
-      .ext_intr_sync                   (ext_intr_sync & csr_crmd_ie),
-      .csr_timer_intr_sync             (csr_timer_intr & csr_crmd_ie),
+      // an interrupt is taken only if globally (CRMD.IE) and locally
+      // (ECFG.LIE, same bit as ESTAT.IS) enabled
+      .ext_intr_sync                   (ext_intr_sync & csr_crmd_ie & csr_ecfg_lie[4]),
+      .csr_timer_intr_sync             (csr_timer_intr & csr_crmd_ie & csr_ecfg_lie[3]),
       .vld_d                           (ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush),
       .ertn_w                          (ertn_vld_w),
 
@@ -772,6 +775,7 @@ module c7bexu (
       .csr_ifu_ic_en                   (csr_ifu_ic_en), 
       .csr_ifu_ic_en_pls               (csr_ifu_ic_en_pls), 
       .csr_ecl_timer_intr              (csr_timer_intr),
+      .csr_ecfg_lie                    (csr_ecfg_lie),
 
       .ext_intr_sync                   (ext_intr_sync),
       //.ext_intr_sync                   (pic_csr_ext_intr)

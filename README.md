@@ -243,7 +243,7 @@ and `exu_ifu_isr_addr = (exc_code_w == 6'h3f) ? tlbrentry : eentry`.
 
 `ext_intr` passes through `intr_sync` (2 flip-flops) and becomes
 `ext_intr_sync`, which also goes to `c7bcsr` directly. `pic` inputs are
-`ext_intr_sync & crmd_ie`, `csr_timer_intr & crmd_ie`,
+`ext_intr_sync & crmd_ie & ecfg_lie[4]`, `csr_timer_intr & crmd_ie & ecfg_lie[3]`,
 `vld_d = ifu_exu_vld_d & ~ifu_exu_exc_vld_d & ~flush`, and
 `ertn_w = ertn_vld_w`. Each source has an in-progress flag:
 
