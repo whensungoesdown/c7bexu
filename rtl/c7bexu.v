@@ -997,7 +997,7 @@ module c7bexu (
       .div_vld_e                       (div_vld_e),
       .div_complete_m                  (div_complete_m),
 
-      .tlb_vld_e                       (tlb_vld_e) // stall one cycle, to let tlbsrch take tlb's search port
+      .tlb_vld_e                       (tlb_vld_e) // stall two cycles: tlbsrch takes the search port, then writes TLBIDX in M
    );
 
 

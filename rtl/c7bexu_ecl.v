@@ -111,8 +111,22 @@ module c7bexu_ecl (
    assign div_stall_reg_mw = div_stall_q & ~div_end; 
 
 
+   // TLB instructions stall IFU for 2 cycles.
+   // Cycle 1 (E) lets TLBSRCH take the TLB search port. TLBSRCH writes its
+   // result (TLBIDX.NE / INDEX) in M, so cycle 2 keeps the next instruction
+   // in D until then; otherwise a csrrd TLBIDX right after tlbsrch reads the
+   // value from before the search.
    wire tlb_stall_ifu;
-   assign tlb_stall_ifu = tlb_vld_e;
+   wire tlb_stall_q;
+
+   dffrl_ns #(1) tlb_stall_reg (
+      .din   (tlb_vld_e),
+      .clk   (clk),
+      .rst_l (resetn),
+      .q     (tlb_stall_q));
+
+   //assign tlb_stall_ifu = tlb_vld_e;
+   assign tlb_stall_ifu = tlb_vld_e | tlb_stall_q;
 
 
    // CSR instructions stall IFU for 2 cycles only,

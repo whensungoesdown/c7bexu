@@ -159,7 +159,7 @@ exception case). Reads of r0 return 0.
 | LSU | `lsu_vld_e` | `lsu_end` | `~lsu_end & (lsu_vld_e \| lsu_stall_q)` | `lsu_stall_q & ~lsu_end` |
 | DIV | `div_vld_e` | `div_complete_m` | `~div_end & (div_vld_e \| div_stall_q)` | `div_stall_q & ~div_end` |
 | CSR | `csr_vld_e` | fixed | `csr_vld_e \| csr_stall_q` (2 cycles) | - |
-| TLB | `tlb_vld_e` | fixed | `tlb_vld_e` (1 cycle) | - |
+| TLB | `tlb_vld_e` | fixed | `tlb_vld_e \| tlb_stall_q` (2 cycles) | - |
 
 ```verilog
 lsu_end = lsu_except_ale_ls1 | lsu_data_valid_ls3 | lsu_wr_fin_ls3
@@ -187,7 +187,9 @@ stall_reg_mw   : __-----_      (= stall_q & ~end)
 - CSR: there is no CSR bypass. The write is at M (E+1), and the IFU is
   held for E and E+1, so the next instruction reads CSRs at D in E+2 at
   the earliest. CSR updates themselves are not held.
-- TLB: one cycle, so TLBSRCH can use the TLB search port.
+- TLB: two cycles. E lets TLBSRCH use the TLB search port; TLBSRCH writes
+  TLBIDX at M, so the second cycle keeps a following `csrrd TLBIDX` from
+  reading the value from before the search.
 
 ## Flush
 
